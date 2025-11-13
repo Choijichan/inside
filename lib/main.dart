@@ -15,7 +15,7 @@ import 'features/settings/settings_page.dart';
 /// 앱 시작부
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await setupDI(); // Drift DB / Repository 등록
+  await setupDI();
   runApp(const MyApp());
 }
 
@@ -26,10 +26,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        /// Diary 기능 Provider
         ChangeNotifierProvider(create: (_) => DiaryProvider()),
-
-        /// ⭐ Schedule 기능 Provider (필수)
         ChangeNotifierProvider(create: (_) => ScheduleProvider()),
       ],
       child: MaterialApp(
@@ -42,7 +39,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// 네비게이션 + 화면 구조
 class RootScaffold extends StatefulWidget {
   const RootScaffold({super.key});
 
@@ -51,39 +47,54 @@ class RootScaffold extends StatefulWidget {
 }
 
 class _RootScaffoldState extends State<RootScaffold> {
-  int _index = 1; // 기본 탭: 캘린더
+  int _index = 0;
 
   final _pages = const [
-    DiaryEditorPage(),  // 작성
-    CalendarPage(),     // 캘린더
-    StatsPage(),        // 통계
-    SettingsPage(),     // 설정
+    CalendarPage(),
+    StatsPage(),
+    SettingsPage(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_index],
+      body: IndexedStack(
+        index: _index,
+        children: _pages,
+      ),
 
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         destinations: const [
           NavigationDestination(
-              icon: Icon(Icons.book_outlined), label: '다이어리'),
+            icon: Icon(Icons.calendar_month_outlined),
+            label: '캘린더',
+          ),
           NavigationDestination(
-              icon: Icon(Icons.calendar_month_outlined), label: '캘린더'),
+            icon: Icon(Icons.analytics_outlined),
+            label: '통계',
+          ),
           NavigationDestination(
-              icon: Icon(Icons.analytics_outlined), label: '통계'),
-          NavigationDestination(
-              icon: Icon(Icons.settings_outlined), label: '설정'),
+            icon: Icon(Icons.settings_outlined),
+            label: '설정',
+          ),
         ],
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: (i) {
+          setState(() => _index = i);
+        },
       ),
 
-      /// 빠른 일기 작성 버튼
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          setState(() => _index = 0); // 다이어리 탭으로 이동
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const DiaryEditorPage()),
+          );
+
+          /// DiaryEditorPage에서 pop("go_calendar") 받은 경우
+          if (result == "go_calendar") {
+            setState(() => _index = 0);
+          }
         },
         child: const Icon(Icons.add),
       ),
