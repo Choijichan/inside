@@ -26,10 +26,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        /// Diary 기능 Provider
         ChangeNotifierProvider(create: (_) => DiaryProvider()),
-
-        /// ⭐ Schedule 기능 Provider (필수)
         ChangeNotifierProvider(create: (_) => ScheduleProvider()),
       ],
       child: MaterialApp(
@@ -42,7 +39,8 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// 네비게이션 + 화면 구조
+/// ⭐ 여기 RootScaffold가 바로 main.dart 안에 존재함
+/// 탭 구조 + DiaryEditorPage 이동 처리 포함
 class RootScaffold extends StatefulWidget {
   const RootScaffold({super.key});
 
@@ -51,17 +49,20 @@ class RootScaffold extends StatefulWidget {
 }
 
 class _RootScaffoldState extends State<RootScaffold> {
-  int _index = 1; // 기본 탭: 캘린더
+  /// 캘린더 탭이 기본
+  int _index = 0;
 
+  /// 탭에서 사용하는 페이지들
   final _pages = const [
-    CalendarPage(),     // 0
-    StatsPage(),        // 1
-    SettingsPage(),     // 2
+    CalendarPage(),     // index 0
+    StatsPage(),        // index 1
+    SettingsPage(),     // index 2
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      /// 탭 전환 시 상태 유지
       body: IndexedStack(
         index: _index,
         children: _pages,
@@ -77,21 +78,23 @@ class _RootScaffoldState extends State<RootScaffold> {
           NavigationDestination(
               icon: Icon(Icons.settings_outlined), label: '설정'),
         ],
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: (i) {
+          setState(() => _index = i);
+        },
       ),
 
-      /// 빠른 일기 작성 버튼
+      /// ⭐ 플로팅 버튼 → DiaryEditorPage 열기
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          /// DiaryEditorPage를 push로 띄움
+          /// DiaryEditorPage를 push로 띄운다
           final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const DiaryEditorPage()),
           );
 
-          /// DiaryEditorPage에서 저장 후 전달된 값 받기
+          /// DiaryEditorPage의 저장/삭제 후 전달된 값 처리
           if (result == "go_calendar") {
-            setState(() => _index = 0); // CalendarPage로 이동
+            setState(() => _index = 0); // ⭐ 캘린더 탭으로 이동
           }
         },
         child: const Icon(Icons.add),
