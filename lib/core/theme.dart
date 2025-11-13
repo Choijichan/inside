@@ -11,9 +11,13 @@ class ThemeController extends ChangeNotifier {
 
   ThemeMode get flutterThemeMode {
     switch (_mode) {
-      case AppThemeMode.light: return ThemeMode.light;
-      case AppThemeMode.dark: return ThemeMode.dark;
-      case AppThemeMode.system: default: return ThemeMode.system;
+      case AppThemeMode.light:
+        return ThemeMode.light;
+      case AppThemeMode.dark:
+        return ThemeMode.dark;
+      case AppThemeMode.system:
+      default:
+        return ThemeMode.system;
     }
   }
 
@@ -38,7 +42,9 @@ final darkTheme = ThemeData(
     brightness: Brightness.dark,
   ),
   useMaterial3: true,
-  inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder()),
+  inputDecorationTheme: const InputDecorationTheme(
+    border: OutlineInputBorder(),
+  ),
 );
 
 final lightTheme = ThemeData(
@@ -47,5 +53,11 @@ final lightTheme = ThemeData(
     brightness: Brightness.light,
   ),
   useMaterial3: true,
-  inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder()),
+  inputDecorationTheme: const InputDecorationTheme(
+    border: OutlineInputBorder(),
+  ),
 );
+
+/// ✅ main.dart에서 쓰는 기본 테마
+///    `theme: appTheme` 이렇게 연결됨
+final ThemeData appTheme = lightTheme;
