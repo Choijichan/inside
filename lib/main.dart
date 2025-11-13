@@ -54,21 +54,22 @@ class _RootScaffoldState extends State<RootScaffold> {
   int _index = 1; // 기본 탭: 캘린더
 
   final _pages = const [
-    DiaryEditorPage(),  // 작성
-    CalendarPage(),     // 캘린더
-    StatsPage(),        // 통계
-    SettingsPage(),     // 설정
+    CalendarPage(),     // 0
+    StatsPage(),        // 1
+    SettingsPage(),     // 2
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_index],
+      body: IndexedStack(
+        index: _index,
+        children: _pages,
+      ),
+
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         destinations: const [
-          NavigationDestination(
-              icon: Icon(Icons.book_outlined), label: '다이어리'),
           NavigationDestination(
               icon: Icon(Icons.calendar_month_outlined), label: '캘린더'),
           NavigationDestination(
@@ -79,10 +80,19 @@ class _RootScaffoldState extends State<RootScaffold> {
         onDestinationSelected: (i) => setState(() => _index = i),
       ),
 
-      /// 빠른 일기 작성 버튼 (중앙 고정)
+      /// 빠른 일기 작성 버튼
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          setState(() => _index = 0); // 다이어리 탭으로 이동
+        onPressed: () async {
+          /// DiaryEditorPage를 push로 띄움
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const DiaryEditorPage()),
+          );
+
+          /// DiaryEditorPage에서 저장 후 전달된 값 받기
+          if (result == "go_calendar") {
+            setState(() => _index = 0); // CalendarPage로 이동
+          }
         },
         child: const Icon(Icons.add),
       ),
