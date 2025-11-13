@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../calendar/calendar_page.dart';
 import '../common/widgets/emotion_picker.dart';
 import 'diary_provider.dart';
 
@@ -61,24 +60,29 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
           '다이어리 — ${provider.selectedDate.year}-${provider.selectedDate.month}-${provider.selectedDate.day}',
         ),
         actions: [
+          /// 삭제 버튼
           TextButton(
             onPressed: d == null
                 ? null
                 : () async {
                     await provider.delete();
+
                     if (!mounted) return;
 
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('삭제 완료')),
                     );
 
-                    /// 삭제 후 캘린더로 이동
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const CalendarPage()),
-                    );
+                    /// ⭐ RootScaffold로 “캘린더로 이동해라” 메시지 전달
+                    Navigator.pop(context, "go_calendar");
                   },
-            child: const Text('삭제', style: TextStyle(color: Colors.red, fontSize: 16)),
+            child: const Text(
+              '삭제',
+              style: TextStyle(color: Colors.red, fontSize: 16),
+            ),
           ),
+
+          /// 저장 버튼
           TextButton(
             onPressed: () async {
               await provider.save(
@@ -94,12 +98,13 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                 const SnackBar(content: Text('저장됨')),
               );
 
-              /// ⭐ 저장 후 캘린더 페이지로 이동
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const CalendarPage()),
-              );
+              /// ⭐ 저장 후 CalendarPage로 이동 신호 보내기
+              Navigator.pop(context, "go_calendar");
             },
-            child: const Text('저장', style: TextStyle(color: Colors.blue, fontSize: 16)),
+            child: const Text(
+              '저장',
+              style: TextStyle(color: Colors.blue, fontSize: 16),
+            ),
           ),
         ],
       ),
@@ -113,16 +118,22 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
+
+            /// 감정 선택
             EmotionPicker(
               value: _emotion,
               onPicked: (v) => setState(() => _emotion = v),
             ),
+
             const SizedBox(height: 16),
+
             TextField(
               controller: _title,
               decoration: const InputDecoration(labelText: '제목'),
             ),
+
             const SizedBox(height: 12),
+
             TextField(
               controller: _content,
               minLines: 6,
@@ -131,14 +142,16 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
               textInputAction: TextInputAction.newline,
               decoration: const InputDecoration(labelText: '내용'),
             ),
+
             const SizedBox(height: 16),
+
             Row(
               children: [
                 ElevatedButton.icon(
                   onPressed: () async {
-                    final p = await provider.pickAndSaveImage();
-                    if (p != null) {
-                      setState(() => _imagePath = p);
+                    final path = await provider.pickAndSaveImage();
+                    if (path != null) {
+                      setState(() => _imagePath = path);
                       ScaffoldMessenger.of(context)
                           .showSnackBar(const SnackBar(content: Text('이미지 첨부됨')));
                     }
@@ -156,6 +169,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                   ),
               ],
             ),
+
             if (_imagePath != null) ...[
               const SizedBox(height: 16),
               ClipRRect(
