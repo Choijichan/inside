@@ -11,8 +11,12 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // 자바 소스/타겟 버전
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+
+        // ⭐ flutter_local_notifications가 요구하는 desugaring 켜기
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -41,4 +45,10 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// ⭐ 여기 새로 추가된 dependencies 블록
+dependencies {
+    // core library desugaring 라이브러리
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.2")
 }
