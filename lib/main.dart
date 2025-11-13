@@ -1,8 +1,10 @@
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/di.dart';
 import 'core/theme.dart';
+import 'core/notification_service.dart';
 
 // Features
 import 'features/diary/diary_provider.dart';
@@ -16,6 +18,7 @@ import 'features/settings/settings_page.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupDI(); // Drift DB / Repository 등록
+  await NotificationService().init(); // 🔔 알림 초기화
   runApp(const MyApp());
 }
 
@@ -26,17 +29,28 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        /// 테마 컨트롤러
+        ChangeNotifierProvider(
+          create: (_) => ThemeController()..load(),
+        ),
+
         /// Diary 기능 Provider
         ChangeNotifierProvider(create: (_) => DiaryProvider()),
 
-        /// ⭐ Schedule 기능 Provider (필수)
+        /// Schedule 기능 Provider
         ChangeNotifierProvider(create: (_) => ScheduleProvider()),
       ],
-      child: MaterialApp(
-        title: 'Diary + Calendar',
-        debugShowCheckedModeBanner: false,
-        theme: appTheme,
-        home: const RootScaffold(),
+      child: Consumer<ThemeController>(
+        builder: (context, themeController, _) {
+          return MaterialApp(
+            title: 'Diary + Calendar',
+            debugShowCheckedModeBanner: false,
+            theme: lightTheme,
+            darkTheme: darkTheme,
+            themeMode: themeController.flutterThemeMode,
+            home: const RootScaffold(),
+          );
+        },
       ),
     );
   }
@@ -69,13 +83,21 @@ class _RootScaffoldState extends State<RootScaffold> {
         selectedIndex: _index,
         destinations: const [
           NavigationDestination(
-              icon: Icon(Icons.book_outlined), label: '다이어리'),
+            icon: Icon(Icons.book_outlined),
+            label: '다이어리',
+          ),
           NavigationDestination(
-              icon: Icon(Icons.calendar_month_outlined), label: '캘린더'),
+            icon: Icon(Icons.calendar_month_outlined),
+            label: '캘린더',
+          ),
           NavigationDestination(
-              icon: Icon(Icons.analytics_outlined), label: '통계'),
+            icon: Icon(Icons.analytics_outlined),
+            label: '통계',
+          ),
           NavigationDestination(
-              icon: Icon(Icons.settings_outlined), label: '설정'),
+            icon: Icon(Icons.settings_outlined),
+            label: '설정',
+          ),
         ],
         onDestinationSelected: (i) => setState(() => _index = i),
       ),
