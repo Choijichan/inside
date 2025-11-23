@@ -5,6 +5,36 @@ import 'package:intl/intl.dart';
 import '../../data/drift/drift_database.dart';
 import 'emotion_bottle_chart.dart';
 
+/// 감정 인덱스(0~4) -> 색상 매핑 (전역 함수)
+Color _emotionColor(int emotion) {
+  switch (emotion) {
+    case 0:
+      return const Color(0xFFEF5350); // 매우 나쁨
+    case 1:
+      return const Color(0xFFFFA726); // 나쁨
+    case 2:
+      return const Color(0xFF4DD0E1); // 보통
+    case 3:
+      return const Color(0xFF7E57C2); // 좋음
+    case 4:
+      return const Color(0xFFFFC107); // 매우 좋음
+    default:
+      return Colors.grey;
+  }
+}
+
+/// 감정 카운트 맵 -> 병 안에 들어갈 구슬 리스트로 변환 (전역 함수)
+List<EmotionBead> _buildBeadsFromCounts(Map<int, int> counts) {
+  final beads = <EmotionBead>[];
+  counts.forEach((emotion, count) {
+    final color = _emotionColor(emotion);
+    for (int i = 0; i < count; i++) {
+      beads.add(EmotionBead(color));
+    }
+  });
+  return beads;
+}
+
 /// 간단 통계
 /// - 이번 달 감정 분포 (바 형태)
 /// - 연속 기록일(최대/현재)
@@ -32,34 +62,39 @@ class _StatsPageState extends State<StatsPage> {
 
   Future<void> _load() async {
     final rows = await (db.select(db.diaries)
-      ..where((t) => t.date.isBetweenValues(_first, _last)))
-      .get();
+          ..where((t) => t.date.isBetweenValues(_first, _last)))
+        .get();
     setState(() => _rows = rows);
   }
 
   @override
   Widget build(BuildContext context) {
     final df = DateFormat('yyyy.MM');
-    final Map<int, int> counts = {0:0,1:0,2:0,3:0,4:0};
+
+    // 감정 카운트
+    final Map<int, int> counts = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0};
     for (final r in _rows) {
       counts[r.emotion] = (counts[r.emotion] ?? 0) + 1;
     }
     final total = _rows.length;
 
-    // Streak 계산(전체 기간 기준 간단 로직)
-    // 모든 일기 날짜를 집합으로 모아 연속일 계산
-    // NOTE: 실서비스에서는 전체 기간을 대상으로 수행하거나 캐시 필요
-    // 여기서는 데모로 이번 달 범위 내에서만 계산
+    // Streak 계산(이번 달 기준)
     final days = _rows.map((e) => e.date).toSet();
     int currentStreak = 0;
     int maxStreak = 0;
-    final today = DateTime.utc(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final today = DateTime.utc(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+
     // 현재 연속일: 오늘부터 과거로 내려가며 체크
     var d = today;
     while (days.contains(d)) {
       currentStreak += 1;
       d = d.subtract(const Duration(days: 1));
     }
+
     // 최대 연속일(이번 달 내)
     d = _first;
     int run = 0;
@@ -88,13 +123,28 @@ class _StatsPageState extends State<StatsPage> {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            Text('감정 분포 — ${df.format(_first)}', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              '감정 분포 — ${df.format(_first)}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
-            Center(child: EmotionBottleChart(beads: _buildBeadsFromCounts(counts))),
+
+            // 🧡 감정 병 차트
+            Center(
+              child: EmotionBottleChart(
+                beads: _buildBeadsFromCounts(counts),
+              ),
+            ),
             const SizedBox(height: 16),
+
+            // 기존 바 차트
             _EmotionBars(counts: counts, total: total),
             const SizedBox(height: 16),
-            Text('연속 기록일', style: Theme.of(context).textTheme.titleMedium),
+
+            Text(
+              '연속 기록일',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 24,
@@ -120,12 +170,18 @@ class _EmotionBars extends StatelessWidget {
 
   String _label(int i) {
     switch (i) {
-      case 0: return '😞 매우나쁨';
-      case 1: return '🙁 나쁨';
-      case 2: return '😐 보통';
-      case 3: return '🙂 좋음';
-      case 4: return '🤩 매우좋음';
-      default: return '$i';
+      case 0:
+        return '😞 매우나쁨';
+      case 1:
+        return '🙁 나쁨';
+      case 2:
+        return '😐 보통';
+      case 3:
+        return '🙂 좋음';
+      case 4:
+        return '🤩 매우좋음';
+      default:
+        return '$i';
     }
   }
 
@@ -140,40 +196,27 @@ class _EmotionBars extends StatelessWidget {
           child: Row(
             children: [
               SizedBox(width: 100, child: Text(_label(i))),
-              Expanded(child: ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: LinearProgressIndicator(value: ratio, minHeight: 12),
-              )),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: ratio,
+                    minHeight: 12,
+                  ),
+                ),
+              ),
               const SizedBox(width: 8),
-              SizedBox(width: 36, child: Text('$c', textAlign: TextAlign.end)),
+              SizedBox(
+                width: 36,
+                child: Text(
+                  '$c',
+                  textAlign: TextAlign.end,
+                ),
+              ),
             ],
           ),
         );
       }),
     );
   }
-
-
-  Color _emotionColor(int emotion) {
-    switch (emotion) {
-      case 0: return const Color(0xFFEF5350);
-      case 1: return const Color(0xFFFFA726);
-      case 2: return const Color(0xFF4DD0E1);
-      case 3: return const Color(0xFF7E57C2);
-      case 4: return const Color(0xFFFFC107);
-      default: return Colors.grey;
-    }
-  }
-
-  List<EmotionBead> _buildBeadsFromCounts(Map<int,int> counts) {
-    final beads = <EmotionBead>[];
-    counts.forEach((emotion,count){
-      final color = _emotionColor(emotion);
-      for(int i=0;i<count;i++){
-        beads.add(EmotionBead(color));
-      }
-    });
-    return beads;
-  }
-
 }
