@@ -152,4 +152,28 @@ class _EmotionBars extends StatelessWidget {
       }),
     );
   }
+
+
+  Color _emotionColor(int emotion) {
+    switch (emotion) {
+      case 0: return const Color(0xFFEF5350);
+      case 1: return const Color(0xFFFFA726);
+      case 2: return const Color(0xFF4DD0E1);
+      case 3: return const Color(0xFF7E57C2);
+      case 4: return const Color(0xFFFFC107);
+      default: return Colors.grey;
+    }
+  }
+
+  List<EmotionBead> _buildBeadsFromCounts(Map<int,int> counts) {
+    final beads = <EmotionBead>[];
+    counts.forEach((emotion,count){
+      final color = _emotionColor(emotion);
+      for(int i=0;i<count;i++){
+        beads.add(EmotionBead(color));
+      }
+    });
+    return beads;
+  }
+
 }
