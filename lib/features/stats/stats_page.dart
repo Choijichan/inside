@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import '../../data/drift/drift_database.dart';
+import 'emotion_bottle_chart.dart';
 
 /// 간단 통계
 /// - 이번 달 감정 분포 (바 형태)
@@ -89,6 +90,8 @@ class _StatsPageState extends State<StatsPage> {
           children: [
             Text('감정 분포 — ${df.format(_first)}', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
+            Center(child: EmotionBottleChart(beads: _buildBeadsFromCounts(counts))),
+            const SizedBox(height: 16),
             _EmotionBars(counts: counts, total: total),
             const SizedBox(height: 16),
             Text('연속 기록일', style: Theme.of(context).textTheme.titleMedium),
