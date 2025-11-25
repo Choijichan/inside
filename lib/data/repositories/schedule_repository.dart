@@ -1,6 +1,7 @@
 /// ScheduleRepository
 ///  - startMin/endMin은 0~1440
 ///  - view단에서 DatePicker/TimePicker 값 → 분 단위로 환산해 저장
+///  - 로컬 DB + Firestore 같이 관리
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:drift/drift.dart';
 import '../drift/drift_database.dart';
@@ -25,10 +26,7 @@ class ScheduleRepository {
     required int endMin,
     required String title,
     String? memo,
-    DateTime? createdAt,
-    DateTime? updatedAt,
   }) {
-    final now = DateTime.now().toUtc();
     return {
       'id': id,
       'date': normalize(date).toUtc(),
@@ -36,8 +34,6 @@ class ScheduleRepository {
       'endMin': endMin,
       'title': title,
       'memo': memo,
-      'createdAt': (createdAt ?? now).toUtc(),
-      'updatedAt': (updatedAt ?? now).toUtc(),
     };
   }
 
@@ -68,7 +64,7 @@ class ScheduleRepository {
     // 1) 로컬 DB insert
     final id = await _db.insertSchedule(comp);
 
-    // 2) Firestore 저장
+    // 2) Firestore에 반영
     try {
       await _schedulesCol.doc(_docIdFromId(id)).set(
             _scheduleToMap(
@@ -80,9 +76,7 @@ class ScheduleRepository {
               memo: memo,
             ),
           );
-    } catch (_) {
-      // 네트워크 실패 등은 무시 (로컬은 이미 저장됨)
-    }
+    } catch (e) {}
 
     return id;
   }
@@ -107,7 +101,7 @@ class ScheduleRepository {
       memo: memo == null ? const Value.absent() : Value(memo),
     );
 
-    // 1) 로컬 업데이트
+    // 1) 로컬 DB 업데이트
     final ok = await _db.updateSchedule(comp);
 
     // 2) Firestore 업데이트
@@ -124,7 +118,7 @@ class ScheduleRepository {
               ),
               SetOptions(merge: true),
             );
-      } catch (_) {}
+      } catch (e) {}
     }
 
     return ok;
@@ -132,13 +126,13 @@ class ScheduleRepository {
 
   /// 일정 삭제 + Firestore 삭제
   Future<int> delete(int id) async {
-    // 1) 로컬 삭제
+    // 1) 로컬에서 삭제
     final rows = await _db.deleteSchedule(id);
 
-    // 2) Firestore 삭제
+    // 2) Firestore에서도 삭제
     try {
       await _schedulesCol.doc(_docIdFromId(id)).delete();
-    } catch (_) {}
+    } catch (e) {}
 
     return rows;
   }
