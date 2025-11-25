@@ -1,6 +1,9 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+// ✅ Firebase
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 import 'core/di.dart';
 import 'core/theme.dart';
@@ -14,11 +17,22 @@ import 'features/calendar/calendar_page.dart';
 import 'features/stats/stats_page.dart';
 import 'features/settings/settings_page.dart';
 
-/// 앱 시작부
+/// ✅ 앱 시작 지점
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await setupDI(); // Drift DB / Repository 등록
-  await NotificationService().init(); // 🔔 알림 초기화
+
+  // 1) Firebase 초기화
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // 2) Drift DB / Repository 등록 (GetIt)
+  await setupDI();
+
+  // 3) 로컬 알림 초기화
+  await NotificationService().init();
+
+  // 4) 앱 실행
   runApp(const MyApp());
 }
 
@@ -83,7 +97,7 @@ class _RootScaffoldState extends State<RootScaffold> {
         selectedIndex: _index,
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.book_outlined),
+            icon: Icon(Icons.edit_outlined),
             label: '다이어리',
           ),
           NavigationDestination(
@@ -91,7 +105,7 @@ class _RootScaffoldState extends State<RootScaffold> {
             label: '캘린더',
           ),
           NavigationDestination(
-            icon: Icon(Icons.analytics_outlined),
+            icon: Icon(Icons.bar_chart_outlined),
             label: '통계',
           ),
           NavigationDestination(
