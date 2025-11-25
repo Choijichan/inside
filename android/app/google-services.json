@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "12087531132",
-    "project_id": "calendar-d52b1",
-    "storage_bucket": "calendar-d52b1.firebasestorage.app"
+    "project_number": "586902375388",
+    "project_id": "inside-89196",
+    "storage_bucket": "inside-89196.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:12087531132:android:0a24b29048c8b69da39bf9",
+        "mobilesdk_app_id": "1:586902375388:android:1dfcfc8bc83d3620d79d19",
         "android_client_info": {
           "package_name": "com.example.myapp"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCGmceEXNxyDrJ-VoiD7i0KqotQh84yte4"
+          "current_key": "AIzaSyCQhA3yV7DhxHPDLvWzKrESg7jFnQf22_Y"
         }
       ],
       "services": {
