@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/pin_lock.dart';
-import '../../main.dart'; // RootScaffold 사용
+import '../../root_scaffold.dart'; // ✅ RootScaffold를 여기서 가져옴
 
 class LockScreen extends StatefulWidget {
   const LockScreen({super.key});
