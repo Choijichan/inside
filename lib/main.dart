@@ -3,7 +3,8 @@
 ///  - DB + Firestore 동시 관리
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:drift/drift.dart';
-import '../drift/drift_database.dart';
+import 'package:diary_calendar_app/data/drift/drift_database.dart';
+
 
 class DiaryRepository {
   final LocalDatabase _db;
