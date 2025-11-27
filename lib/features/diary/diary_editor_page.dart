@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import '../emotion_picker.dart';
-import '../diary_provider.dart';
-import '../../data/storage_service.dart';
+import 'package:your_app_name/data/storage_service.dart';
+import 'package:your_app_name/ui/diary/emotion_picker.dart';
+import 'package:your_app_name/ui/diary/diary_provider.dart';
+
 
 class DiaryEditorPage extends StatefulWidget {
   const DiaryEditorPage({super.key});
