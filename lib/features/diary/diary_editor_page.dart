@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import 'package:your_app_name/data/storage_service.dart';
+import 'package:diary_calendar_app/data/storage_service.dart';
 import 'package:your_app_name/ui/diary/emotion_picker.dart';
 import 'package:your_app_name/ui/diary/diary_provider.dart';
 
