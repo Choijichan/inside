@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:get_it/get_it.dart';
+import 'package:drift/drift.dart' as drift;
 
 import 'package:diary_calendar_app/data/drift/drift_database.dart';
 import 'package:diary_calendar_app/features/diary/diary_detail_page.dart';
@@ -25,15 +26,16 @@ class _DiaryListPageState extends State<DiaryListPage> {
   }
 
   Future<void> _load() async {
-    // TODO: 네 실제 LocalDatabase에 맞게 메서드 이름 조정하기
-    // 예: getAllDiaries(), getDiariesBetween 등
-    final from = DateTime.utc(2000, 1, 1);
-    final to = DateTime.utc(2100, 1, 1);
+    // ✅ Drift 기본 쿼리로 diaries 전체 가져오기
+    final query = _db.select(_db.diaries)
+      ..orderBy([
+        (tbl) => drift.OrderingTerm(
+              expression: tbl.date,
+              mode: drift.OrderingMode.desc,
+            ),
+      ]);
 
-    // 아래는 예시: getDiariesBetween(from, to) 가 있다고 가정
-    final list = await _db.getDiariesBetween(from, to);
-
-    list.sort((a, b) => b.date.compareTo(a.date));
+    final list = await query.get();
 
     if (!mounted) return;
     setState(() {
@@ -55,8 +57,8 @@ class _DiaryListPageState extends State<DiaryListPage> {
             : _rows.isEmpty
                 ? const Center(child: Text('작성한 다이어리가 없습니다.'))
                 : ListView.separated(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     itemBuilder: (context, index) {
                       final d = _rows[index];
                       final dateLabel =
