@@ -1,12 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 
-import '../common/widgets/emotion_picker.dart';
-import 'diary_provider.dart';
-import '../../core/storage_service.dart';
+import '../emotion_picker.dart';
+import '../diary_provider.dart';
+import '../../data/storage_service.dart';
 
 class DiaryEditorPage extends StatefulWidget {
   const DiaryEditorPage({super.key});
@@ -19,16 +19,18 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
   final _title = TextEditingController();
   final _content = TextEditingController();
   int _emotion = 3; // 기본값
-  String? _imagePath; // 로컬 경로 또는 Firebase URL
+  String? _imagePath; // 로컬 파일 경로 OR Firebase Storage URL
 
-  final _imagePicker = ImagePicker();
+  final _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
+
+    // 화면 build 이후 provider 값 반영
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<DiaryProvider>();
-      final d = provider.currentDiary;
+      final d = provider.current; // ← 네 Provider 구조에 맞춤
 
       if (d != null) {
         _emotion = d.emotion;
@@ -41,6 +43,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
         _content.clear();
         _imagePath = null;
       }
+
       setState(() {});
     });
   }
@@ -52,13 +55,15 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
     super.dispose();
   }
 
+  /// -------------------------------
   /// 이미지 선택 (갤러리)
+  /// -------------------------------
   Future<void> _pickImage() async {
-    final xfile = await _imagePicker.pickImage(source: ImageSource.gallery);
+    final xfile = await _picker.pickImage(source: ImageSource.gallery);
     if (xfile == null) return;
 
     setState(() {
-      _imagePath = xfile.path; // 로컬 경로
+      _imagePath = xfile.path; // 로컬 파일 경로
     });
   }
 
@@ -69,40 +74,35 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
     });
   }
 
-  /// 현재 _imagePath가 "로컬 경로"라면 Storage에 업로드해서 URL로 바꾸고,
-  /// 이미 URL이면 그대로 반환
-  Future<String?> _ensureUploadedToStorage(String? currentPath) async {
-    if (currentPath == null) return null;
-    // 간단하게 "http"로 시작하면 이미 URL이라고 가정
-    if (currentPath.startsWith('http')) {
-      return currentPath;
-    }
+  /// 로컬 파일이면 Storage 업로드 → URL 반환
+  Future<String?> _ensureUploadedToStorage(String? path) async {
+    if (path == null) return null;
+    if (path.startsWith('http')) return path; // 이미 URL이면 그대로
 
-    // 로컬 파일 → Firebase Storage 업로드
-    final file = File(currentPath);
-    if (!file.existsSync()) {
-      return null;
-    }
+    final file = File(path);
+    if (!file.existsSync()) return null;
 
-    final storageService = context.read<StorageService>();
-    final downloadUrl = await storageService.uploadDiaryImage(file);
-    return downloadUrl; // URL
+    final storage = context.read<StorageService>();
+    final url = await storage.uploadDiaryImage(file);
+
+    return url;
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<DiaryProvider>();
-    final d = provider.currentDiary;
+    final d = provider.current; // ← 수정됨
+
+    final date = provider.selectedDate;
+    final dateLabel = "${date.year}.${date.month}.${date.day}";
 
     return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(), // 키보드 내려주기
+      onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         appBar: AppBar(
-          title: Text(
-            '다이어리 — ${provider.selectedDate.year}-${provider.selectedDate.month}-${provider.selectedDate.day}',
-          ),
+          title: Text("다이어리 — $dateLabel"),
           actions: [
-            /// 🔥 삭제 버튼
+            /// 삭제 버튼
             TextButton(
               onPressed: d == null
                   ? null
@@ -115,22 +115,21 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                         const SnackBar(content: Text('삭제 완료')),
                       );
 
-                      /// ⭐ 삭제 후 이전 화면 이동 제거 (탭 구조 루트이므로 pop X)
-                      // Navigator.of(context).pop();
+                      /// ❌ pop 제거
+                      /// 탭 구조에서는 pop 하면 전체 Route 날아감(검은 화면)
                     },
               child: const Text(
                 '삭제',
-                style: TextStyle(color: Colors.red, fontSize: 16),
+                style: TextStyle(color: Colors.red),
               ),
             ),
 
-            /// 🔥 저장 버튼
+            /// 저장 버튼
             TextButton(
               onPressed: () async {
-                // 1️⃣ 현재 _imagePath가 로컬 경로라면 → Storage에 업로드해서 URL로 변환
-                final uploadedPath = await _ensureUploadedToStorage(_imagePath);
+                final uploadedPath =
+                    await _ensureUploadedToStorage(_imagePath);
 
-                // 2️⃣ provider.save 에는 "URL(or null)"을 넘김
                 await provider.save(
                   emotion: _emotion,
                   title: _title.text,
@@ -138,23 +137,21 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                   imagePath: uploadedPath,
                 );
 
-                // 3️⃣ 상태에도 반영 (다음에 들어왔을 때도 URL 기준)
-                setState(() {
-                  _imagePath = uploadedPath;
-                });
-
                 if (!mounted) return;
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('저장됨')),
                 );
 
-                /// ⭐ 저장 후 이전 화면 이동 제거 (탭 구조 루트이므로 pop X)
-                // Navigator.of(context).pop();
+                setState(() {
+                  _imagePath = uploadedPath;
+                });
+
+                /// ❌ pop 제거
               },
               child: const Text(
                 '저장',
-                style: TextStyle(color: Colors.blue, fontSize: 16),
+                style: TextStyle(color: Colors.blue),
               ),
             ),
           ],
@@ -166,6 +163,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                /// 감정 선택
                 Text(
                   '오늘 기분은 어떤가요?',
                   style: Theme.of(context).textTheme.titleMedium,
@@ -179,7 +177,10 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                     });
                   },
                 ),
-                const SizedBox(height: 16),
+
+                const SizedBox(height: 20),
+
+                /// 제목
                 TextField(
                   controller: _title,
                   decoration: const InputDecoration(
@@ -188,18 +189,21 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                /// 내용
                 TextField(
                   controller: _content,
                   decoration: const InputDecoration(
                     labelText: '내용',
-                    border: OutlineInputBorder(),
                     alignLabelWithHint: true,
+                    border: OutlineInputBorder(),
                   ),
                   minLines: 5,
                   maxLines: null,
-                  keyboardType: TextInputType.multiline,
                 ),
                 const SizedBox(height: 16),
+
+                /// 이미지 추가/제거 버튼
                 Row(
                   children: [
                     ElevatedButton.icon(
@@ -207,7 +211,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                       icon: const Icon(Icons.photo),
                       label: const Text('사진 추가'),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     if (_imagePath != null)
                       TextButton.icon(
                         onPressed: _clearImage,
@@ -216,7 +220,10 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                       ),
                   ],
                 ),
-                const SizedBox(height: 16),
+
+                const SizedBox(height: 20),
+
+                /// 이미지 미리보기
                 _buildImagePreview(context),
               ],
             ),
@@ -226,58 +233,52 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
     );
   }
 
+  /// -------------------------------
+  /// 이미지 미리보기
+  /// -------------------------------
   Widget _buildImagePreview(BuildContext context) {
-    if (_imagePath == null) {
-      return const SizedBox.shrink();
-    }
+    if (_imagePath == null) return const SizedBox.shrink();
 
-    // URL인지 로컬파일인지 분기
     final isUrl = _imagePath!.startsWith('http');
+    final radius = BorderRadius.circular(12);
 
     if (isUrl) {
-      // 네트워크 이미지
+      // URL 이미지
       return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: radius,
         child: Image.network(
           _imagePath!,
-          height: 200,
+          height: 220,
           width: double.infinity,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stack) => Container(
-            height: 200,
-            color: Theme.of(context).colorScheme.surfaceVariant,
-            alignment: Alignment.center,
-            child: const Text('이미지를 불러올 수 없습니다.'),
-          ),
-        ),
-      );
-    } else {
-      // 로컬 파일 이미지
-      final file = File(_imagePath!);
-      if (!file.existsSync()) {
-        return Container(
-          height: 200,
-          color: Theme.of(context).colorScheme.surfaceVariant,
-          alignment: Alignment.center,
-          child: const Text('이미지 파일이 존재하지 않습니다.'),
-        );
-      }
-
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.file(
-          file,
-          height: 200,
-          width: double.infinity,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stack) => Container(
-            height: 200,
-            color: Theme.of(context).colorScheme.surfaceVariant,
-            alignment: Alignment.center,
-            child: const Text('이미지를 불러올 수 없습니다.'),
-          ),
+          errorBuilder: (_, __, ___) => _errorImg(context),
         ),
       );
     }
+
+    // 로컬 이미지
+    final file = File(_imagePath!);
+    if (!file.existsSync()) return _errorImg(context);
+
+    return ClipRRect(
+      borderRadius: radius,
+      child: Image.file(
+        file,
+        height: 220,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _errorImg(context),
+      ),
+    );
+  }
+
+  Widget _errorImg(BuildContext context) {
+    return Container(
+      height: 220,
+      width: double.infinity,
+      color: Theme.of(context).colorScheme.surfaceVariant,
+      alignment: Alignment.center,
+      child: const Text('이미지를 불러올 수 없습니다.'),
+    );
   }
 }
