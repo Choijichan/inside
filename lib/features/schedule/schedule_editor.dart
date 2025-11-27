@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import 'package:diary_calendar_app/features/schedule/time_utils.dart';
 import 'package:diary_calendar_app/features/schedule/schedule_provider.dart';
-import 'package:diary_calendar_app/features/diary/diary_provider.dart';
 
 /// 일정 추가/수정 다이얼로그
 Future<void> openScheduleDialog(
@@ -16,9 +15,6 @@ Future<void> openScheduleDialog(
   String title = '',
   String memo = '',
 }) async {
-  // ✅ 다이어리도 이 날짜 기준으로 맞춰 두기
-  context.read<DiaryProvider>().setDate(date);
-
   final formKey = GlobalKey<FormState>();
   final titleCtrl = TextEditingController(text: title);
   final memoCtrl = TextEditingController(text: memo);
@@ -51,9 +47,6 @@ Future<void> openScheduleDialog(
   await showDialog(
     context: context,
     builder: (ctx) {
-      final diary = ctx.watch<DiaryProvider>();
-      final currentDiary = diary.current;
-
       return AlertDialog(
         title: Text(id == null ? '일정 추가' : '일정 수정'),
         content: Form(
@@ -72,54 +65,9 @@ Future<void> openScheduleDialog(
                       style: Theme.of(ctx).textTheme.labelLarge,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
 
-                  // ✅ 다이어리 요약 표시
-                  if (currentDiary != null) ...[
-                    Text(
-                      '이 날짜의 다이어리',
-                      style: Theme.of(ctx).textTheme.labelMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Theme.of(ctx)
-                            .colorScheme
-                            .surfaceVariant
-                            .withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            currentDiary.title,
-                            style: Theme.of(ctx).textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            currentDiary.content,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(ctx).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ] else ...[
-                    Text(
-                      '이 날짜에는 저장된 다이어리가 없습니다.',
-                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(ctx).hintColor,
-                          ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-
-                  // 제목
+                  /// 제목
                   TextFormField(
                     controller: titleCtrl,
                     decoration: const InputDecoration(labelText: '제목'),
@@ -128,7 +76,7 @@ Future<void> openScheduleDialog(
                   ),
                   const SizedBox(height: 12),
 
-                  // 시작/종료 시간
+                  /// 시작/종료 시간
                   Row(
                     children: [
                       Expanded(
@@ -154,7 +102,7 @@ Future<void> openScheduleDialog(
                   ),
                   const SizedBox(height: 8),
 
-                  // 메모
+                  /// 메모
                   TextFormField(
                     controller: memoCtrl,
                     decoration: const InputDecoration(labelText: '메모(선택)'),
