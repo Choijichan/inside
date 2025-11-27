@@ -5,8 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import 'package:diary_calendar_app/core/storage_service.dart';
-import 'package:your_app_name/features/common/widgets/emotion_picker.dart';
-import 'package:your_app_name/ui/diary/diary_provider.dart';
+import 'package:diary_calendar_app/features/common/widgets/emotion_picker.dart';
+import 'package:diary_calendar_app/features/diary/diary_provider.dart';
 
 
 class DiaryEditorPage extends StatefulWidget {
