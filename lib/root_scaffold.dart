@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'features/diary/diary_list_page.dart';
 import 'features/diary/diary_editor_page.dart';
 import 'features/calendar/calendar_page.dart';
 import 'features/stats/stats_page.dart';
@@ -15,11 +16,11 @@ class RootScaffold extends StatefulWidget {
 class _RootScaffoldState extends State<RootScaffold> {
   int _index = 1; // 기본 탭: 캘린더
 
-  final _pages = const [
-    DiaryEditorPage(),  // 작성
-    CalendarPage(),     // 캘린더
-    StatsPage(),        // 통계
-    SettingsPage(),     // 설정
+  late final List<Widget> _pages = [
+    const DiaryListPage(),
+    const CalendarPage(),
+    const StatsPage(),
+    const SettingsPage(),
   ];
 
   @override
@@ -29,31 +30,39 @@ class _RootScaffoldState extends State<RootScaffold> {
 
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
+        onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.edit_outlined),
+            icon: Icon(Icons.book_outlined),
+            selectedIcon: Icon(Icons.book),
             label: '다이어리',
           ),
           NavigationDestination(
             icon: Icon(Icons.calendar_month_outlined),
+            selectedIcon: Icon(Icons.calendar_month),
             label: '캘린더',
           ),
           NavigationDestination(
             icon: Icon(Icons.bar_chart_outlined),
+            selectedIcon: Icon(Icons.bar_chart),
             label: '통계',
           ),
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
             label: '설정',
           ),
         ],
-        onDestinationSelected: (i) => setState(() => _index = i),
       ),
 
-      /// 빠른 일기 작성 버튼
+      /// 다이어리 작성 버튼 (항상 가운데)
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          setState(() => _index = 0); // 다이어리 탭으로 이동
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const DiaryEditorPage(),
+            ),
+          );
         },
         child: const Icon(Icons.add),
       ),
