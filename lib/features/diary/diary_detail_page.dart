@@ -15,7 +15,8 @@ class DiaryDetailPage extends StatelessWidget {
   });
 
   String _formatDate(DateTime d) {
-    return DateFormat('yyyy.MM.dd (E)', 'ko_KR').format(d.toLocal());
+    // 🔥 여기만 수정: locale 인자('ko_KR') 제거
+    return DateFormat('yyyy.MM.dd (E)').format(d.toLocal());
   }
 
   String _emotionLabel(int emotion) {
