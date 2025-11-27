@@ -18,32 +18,31 @@ class DiaryEditorPage extends StatefulWidget {
 class _DiaryEditorPageState extends State<DiaryEditorPage> {
   final _title = TextEditingController();
   final _content = TextEditingController();
-  int _emotion = 2;
+  int _emotion = 3; // 기본값
+  String? _imagePath; // 로컬 경로 또는 Firebase URL
 
-  /// 💡 이 값은 "로컬 경로"일 수도 있고 "Storage URL"일 수도 있다.
-  String? _imagePath;
-
-  void _loadFromProvider() {
-    final provider = context.read<DiaryProvider>();
-    final d = provider.current;
-    _title.text = d?.title ?? '';
-    _content.text = d?.content ?? '';
-    _emotion = d?.emotion ?? 2;
-    _imagePath = d?.imagePath;
-  }
+  final _imagePicker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadFromProvider();
-    });
-  }
+      final provider = context.read<DiaryProvider>();
+      final d = provider.currentDiary;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _loadFromProvider();
+      if (d != null) {
+        _emotion = d.emotion;
+        _title.text = d.title;
+        _content.text = d.content;
+        _imagePath = d.imagePath;
+      } else {
+        _emotion = 3;
+        _title.clear();
+        _content.clear();
+        _imagePath = null;
+      }
+      setState(() {});
+    });
   }
 
   @override
@@ -53,255 +52,194 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
     super.dispose();
   }
 
-  bool _isVideoPath(String path) {
-    final lower = path.toLowerCase();
-    return lower.endsWith('.mp4') ||
-        lower.endsWith('.mov') ||
-        lower.endsWith('.avi') ||
-        lower.endsWith('.mkv');
-  }
-
-  /// ✅ 저장 전에: 로컬 파일이면 Firebase Storage에 업로드해서 URL로 바꿔주는 함수
-  Future<String?> _ensureUploadedToStorage(String? path) async {
-    if (path == null) return null;
-
-    // 이미 URL이면(=이전에 업로드된 상태면) 그대로 사용
-    if (path.startsWith('http')) {
-      return path;
-    }
-
-    final file = File(path);
-    if (!await file.exists()) {
-      return path; // 파일이 없으면 그냥 원래 값 반환
-    }
-
-    final isVideo = _isVideoPath(path);
-    String url;
-
-    if (isVideo) {
-      url = await StorageService.instance.uploadDiaryVideo(file);
-    } else {
-      url = await StorageService.instance.uploadDiaryImage(file);
-    }
-
-    return url;
-  }
-
-  /// 📷 이미지 선택 (로컬 경로만 세팅, Storage 업로드는 "저장 버튼"에서 처리)
+  /// 이미지 선택 (갤러리)
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 2048,
-    );
-    if (picked == null) return;
+    final xfile = await _imagePicker.pickImage(source: ImageSource.gallery);
+    if (xfile == null) return;
 
     setState(() {
-      _imagePath = picked.path; // 로컬 경로
+      _imagePath = xfile.path; // 로컬 경로
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('이미지 선택됨 (저장 시 업로드)')),
-    );
   }
 
-  /// 🎬 영상 선택 (로컬 경로 세팅, 저장 시 Storage에 업로드)
-  Future<void> _pickVideo() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickVideo(
-      source: ImageSource.gallery,
-    );
-    if (picked == null) return;
-
+  /// 이미지 제거
+  void _clearImage() {
     setState(() {
-      _imagePath = picked.path; // 로컬 경로
+      _imagePath = null;
     });
+  }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('영상 선택됨 (저장 시 업로드)')),
-    );
+  /// 현재 _imagePath가 "로컬 경로"라면 Storage에 업로드해서 URL로 바꾸고,
+  /// 이미 URL이면 그대로 반환
+  Future<String?> _ensureUploadedToStorage(String? currentPath) async {
+    if (currentPath == null) return null;
+    // 간단하게 "http"로 시작하면 이미 URL이라고 가정
+    if (currentPath.startsWith('http')) {
+      return currentPath;
+    }
+
+    // 로컬 파일 → Firebase Storage 업로드
+    final file = File(currentPath);
+    if (!file.existsSync()) {
+      return null;
+    }
+
+    final storageService = context.read<StorageService>();
+    final downloadUrl = await storageService.uploadDiaryImage(file);
+    return downloadUrl; // URL
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<DiaryProvider>();
-    final d = provider.current;
+    final d = provider.currentDiary;
 
-    return Scaffold(
-      resizeToAvoidBottomInset: false, // 한글 입력 버그 방지
-      appBar: AppBar(
-        title: Text(
-          '다이어리 — ${provider.selectedDate.year}-${provider.selectedDate.month}-${provider.selectedDate.day}',
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(), // 키보드 내려주기
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            '다이어리 — ${provider.selectedDate.year}-${provider.selectedDate.month}-${provider.selectedDate.day}',
+          ),
+          actions: [
+            /// 🔥 삭제 버튼
+            TextButton(
+              onPressed: d == null
+                  ? null
+                  : () async {
+                      await provider.delete();
+
+                      if (!mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('삭제 완료')),
+                      );
+
+                      /// ⭐ 삭제 후 이전 화면 이동 제거 (탭 구조 루트이므로 pop X)
+                      // Navigator.of(context).pop();
+                    },
+              child: const Text(
+                '삭제',
+                style: TextStyle(color: Colors.red, fontSize: 16),
+              ),
+            ),
+
+            /// 🔥 저장 버튼
+            TextButton(
+              onPressed: () async {
+                // 1️⃣ 현재 _imagePath가 로컬 경로라면 → Storage에 업로드해서 URL로 변환
+                final uploadedPath = await _ensureUploadedToStorage(_imagePath);
+
+                // 2️⃣ provider.save 에는 "URL(or null)"을 넘김
+                await provider.save(
+                  emotion: _emotion,
+                  title: _title.text,
+                  content: _content.text,
+                  imagePath: uploadedPath,
+                );
+
+                // 3️⃣ 상태에도 반영 (다음에 들어왔을 때도 URL 기준)
+                setState(() {
+                  _imagePath = uploadedPath;
+                });
+
+                if (!mounted) return;
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('저장됨')),
+                );
+
+                /// ⭐ 저장 후 이전 화면 이동 제거 (탭 구조 루트이므로 pop X)
+                // Navigator.of(context).pop();
+              },
+              child: const Text(
+                '저장',
+                style: TextStyle(color: Colors.blue, fontSize: 16),
+              ),
+            ),
+          ],
         ),
-        actions: [
-          /// 🔥 삭제 버튼
-          TextButton(
-            onPressed: d == null
-                ? null
-                : () async {
-                    await provider.delete();
 
-                    if (!mounted) return;
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('삭제 완료')),
-                    );
-
-                    /// ⭐ 삭제 후 이전 화면으로 이동
-                    Navigator.of(context).pop();
-                  },
-            child: const Text(
-              '삭제',
-              style: TextStyle(color: Colors.red, fontSize: 16),
-            ),
-          ),
-
-          /// 🔥 저장 버튼
-          TextButton(
-            onPressed: () async {
-              // 1️⃣ 현재 _imagePath가 로컬 경로라면 → Storage에 업로드해서 URL로 변환
-              final uploadedPath = await _ensureUploadedToStorage(_imagePath);
-
-              // 2️⃣ provider.save 에는 "URL(or null)"을 넘김
-              await provider.save(
-                emotion: _emotion,
-                title: _title.text,
-                content: _content.text,
-                imagePath: uploadedPath,
-              );
-
-              // 3️⃣ 상태에도 반영 (다음에 들어왔을 때도 URL 기준)
-              setState(() {
-                _imagePath = uploadedPath;
-              });
-
-              if (!mounted) return;
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('저장됨')),
-              );
-
-              /// ⭐ 저장 후 이전 화면으로 이동
-              Navigator.of(context).pop();
-            },
-            child: const Text(
-              '저장',
-              style: TextStyle(color: Colors.blue, fontSize: 16),
-            ),
-          ),
-        ],
-      ),
-
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '오늘 기분은 어떤가요?',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-
-              /// 감정 선택 위젯
-              EmotionPicker(
-                value: _emotion,
-                onPicked: (v) => setState(() => _emotion = v),
-              ),
-
-              const SizedBox(height: 16),
-              TextField(
-                controller: _title,
-                decoration: const InputDecoration(
-                  labelText: '제목',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-              TextField(
-                controller: _content,
-                keyboardType: TextInputType.multiline,
-                textInputAction: TextInputAction.newline,
-                minLines: 8,
-                maxLines: 20,
-                decoration: const InputDecoration(
-                  labelText: '내용',
-                  alignLabelWithHint: true,
-                  border: OutlineInputBorder(),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: _pickImage,
-                    icon: const Icon(Icons.image_outlined),
-                    label: const Text('사진 첨부'),
-                  ),
-                  const SizedBox(width: 12),
-                  OutlinedButton.icon(
-                    onPressed: _pickVideo,
-                    icon: const Icon(Icons.videocam_outlined),
-                    label: const Text('영상 첨부'),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 8),
-              if (_imagePath != null)
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  _imagePath!,
-                  overflow: TextOverflow.ellipsis,
+                  '오늘 기분은 어떤가요?',
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-
-              const SizedBox(height: 16),
-
-              /// 미리보기 (이미지/영상 구분 + 로컬/URL 구분)
-              if (_imagePath != null) ...[
-                _buildMediaPreview(context, _imagePath!),
+                const SizedBox(height: 8),
+                EmotionPicker(
+                  value: _emotion,
+                  onChanged: (v) {
+                    setState(() {
+                      _emotion = v;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _title,
+                  decoration: const InputDecoration(
+                    labelText: '제목',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _content,
+                  decoration: const InputDecoration(
+                    labelText: '내용',
+                    border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
+                  ),
+                  minLines: 5,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _pickImage,
+                      icon: const Icon(Icons.photo),
+                      label: const Text('사진 추가'),
+                    ),
+                    const SizedBox(width: 8),
+                    if (_imagePath != null)
+                      TextButton.icon(
+                        onPressed: _clearImage,
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('사진 제거'),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildImagePreview(context),
               ],
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildMediaPreview(BuildContext context, String path) {
-    final isNetwork = path.startsWith('http');
-    final isVideo = _isVideoPath(path);
-
-    if (isVideo) {
-      // 에디터 화면에서는 간단하게 "영상 선택됨" 정도만 보여주고,
-      // 실제 재생은 DiaryDetailPage에서 하도록 두는 구조.
-      return Container(
-        height: 120,
-        width: double.infinity,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.videocam),
-            SizedBox(width: 8),
-            Text('영상이 첨부되었습니다. (상세 화면에서 재생)'),
-          ],
-        ),
-      );
+  Widget _buildImagePreview(BuildContext context) {
+    if (_imagePath == null) {
+      return const SizedBox.shrink();
     }
 
-    // 이미지인 경우: 로컬 / 네트워크 둘 다 처리
-    if (isNetwork) {
+    // URL인지 로컬파일인지 분기
+    final isUrl = _imagePath!.startsWith('http');
+
+    if (isUrl) {
+      // 네트워크 이미지
       return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         child: Image.network(
-          path,
+          _imagePath!,
           height: 200,
           width: double.infinity,
           fit: BoxFit.cover,
@@ -314,10 +252,21 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
         ),
       );
     } else {
+      // 로컬 파일 이미지
+      final file = File(_imagePath!);
+      if (!file.existsSync()) {
+        return Container(
+          height: 200,
+          color: Theme.of(context).colorScheme.surfaceVariant,
+          alignment: Alignment.center,
+          child: const Text('이미지 파일이 존재하지 않습니다.'),
+        );
+      }
+
       return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         child: Image.file(
-          File(path),
+          file,
           height: 200,
           width: double.infinity,
           fit: BoxFit.cover,
