@@ -1,34 +1,69 @@
 import 'package:flutter/material.dart';
 
-typedef OnPicked = void Function(int value);
-
-/// 감정 선택 위젯(0~4). 추후 커스텀 아이콘/텍스트로 확장 가능.
+/// 감정 선택 위젯
+/// - value: 현재 선택된 감정 (1~5)
+/// - onSelected: 감정이 선택될 때 호출
 class EmotionPicker extends StatelessWidget {
   final int value;
-  final OnPicked onPicked;
+  final ValueChanged<int> onSelected;
 
-  const EmotionPicker({super.key, required this.value, required this.onPicked});
+  const EmotionPicker({
+    super.key,
+    required this.value,
+    required this.onSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final icons = const [
-      Icons.sentiment_very_dissatisfied,
-      Icons.sentiment_dissatisfied,
-      Icons.sentiment_neutral,
-      Icons.sentiment_satisfied,
-      Icons.sentiment_very_satisfied,
+    // 1~5 감정 이모지/라벨 정의
+    const emotions = [
+      '😭', // 1
+      '☹️', // 2
+      '😐', // 3
+      '😊', // 4
+      '🤩', // 5
     ];
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List.generate(5, (i) {
-        final selected = value == i;
-        return IconButton(
-          onPressed: () => onPicked(i),
-          icon: Icon(icons[i], size: selected ? 34 : 28),
-          color: selected ? theme.colorScheme.primary : null,
-          tooltip: '감정 $i',
+      children: List.generate(emotions.length, (index) {
+        final emoIndex = index + 1;
+        final selected = (emoIndex == value);
+
+        return GestureDetector(
+          onTap: () => onSelected(emoIndex),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+            decoration: BoxDecoration(
+              color: selected
+                  ? Theme.of(context).colorScheme.primary.withOpacity(0.12)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: selected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).dividerColor,
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  emotions[index],
+                  style: const TextStyle(fontSize: 24),
+                ),
+                const SizedBox(height: 4),
+                Icon(
+                  selected ? Icons.radio_button_checked : Icons.circle_outlined,
+                  size: 16,
+                  color: selected
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).hintColor,
+                ),
+              ],
+            ),
+          ),
         );
       }),
     );
