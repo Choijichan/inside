@@ -8,7 +8,6 @@ import 'package:diary_calendar_app/core/storage_service.dart';
 import 'package:diary_calendar_app/features/common/widgets/emotion_picker.dart';
 import 'package:diary_calendar_app/features/diary/diary_provider.dart';
 
-
 class DiaryEditorPage extends StatefulWidget {
   const DiaryEditorPage({super.key});
 
@@ -31,7 +30,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
     // 화면 build 이후 provider 값 반영
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<DiaryProvider>();
-      final d = provider.current; // ← 네 Provider 구조에 맞춤
+      final d = provider.current;
 
       if (d != null) {
         _emotion = d.emotion;
@@ -92,7 +91,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<DiaryProvider>();
-    final d = provider.current; // ← 수정됨
+    final d = provider.current;
 
     final date = provider.selectedDate;
     final dateLabel = "${date.year}.${date.month}.${date.day}";
@@ -116,8 +115,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                         const SnackBar(content: Text('삭제 완료')),
                       );
 
-                      /// ❌ pop 제거
-                      /// 탭 구조에서는 pop 하면 전체 Route 날아감(검은 화면)
+                      /// pop 제거 (탭 루트 화면이기 때문에)
                     },
               child: const Text(
                 '삭제',
@@ -148,7 +146,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                   _imagePath = uploadedPath;
                 });
 
-                /// ❌ pop 제거
+                /// pop 없음
               },
               child: const Text(
                 '저장',
@@ -157,7 +155,6 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
             ),
           ],
         ),
-
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -172,7 +169,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                 const SizedBox(height: 8),
                 EmotionPicker(
                   value: _emotion,
-                  onChanged: (v) {
+                  onSelected: (v) {          // 🔴 여기 수정 (onChanged → onSelected)
                     setState(() {
                       _emotion = v;
                     });
