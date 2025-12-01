@@ -19,9 +19,13 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
   final _title = TextEditingController();
   final _content = TextEditingController();
   int _emotion = 3; // 기본값
-  String? _imagePath; // 로컬 파일 경로 OR Firebase Storage URL
+
+  /// 이미지 또는 영상 경로 (로컬 파일 경로 OR Firebase Storage URL)
+  String? _imagePath;
 
   final _picker = ImagePicker();
+
+  bool _saving = false;
 
   @override
   void initState() {
@@ -36,7 +40,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
         _emotion = d.emotion;
         _title.text = d.title;
         _content.text = d.content;
-        _imagePath = d.imagePath;
+        _imagePath = d.imagePath; // 이미지 또는 영상 URL
       } else {
         _emotion = 3;
         _title.clear();
@@ -55,8 +59,18 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
     super.dispose();
   }
 
+  bool _isVideoPath(String path) {
+    final lower = path.toLowerCase();
+    return lower.endsWith('.mp4') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.m4v') ||
+        lower.endsWith('.avi') ||
+        lower.endsWith('.webm') ||
+        lower.contains('diary_videos'); // Storage 폴더 이름 기준으로도 체크
+  }
+
   /// -------------------------------
-  /// 이미지 선택 (갤러리)
+  /// 사진 선택 (갤러리)
   /// -------------------------------
   Future<void> _pickImage() async {
     final xfile = await _picker.pickImage(source: ImageSource.gallery);
@@ -67,7 +81,22 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
     });
   }
 
-  /// 이미지 제거
+  /// -------------------------------
+  /// 영상 선택 (갤러리)
+  /// -------------------------------
+  Future<void> _pickVideo() async {
+    final xfile = await _picker.pickVideo(
+      source: ImageSource.gallery,
+      maxDuration: const Duration(minutes: 5),
+    );
+    if (xfile == null) return;
+
+    setState(() {
+      _imagePath = xfile.path; // 로컬 파일 경로
+    });
+  }
+
+  /// 첨부 제거
   void _clearImage() {
     setState(() {
       _imagePath = null;
@@ -82,10 +111,59 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
     final file = File(path);
     if (!file.existsSync()) return null;
 
-    final storage = context.read<StorageService>();
-    final url = await storage.uploadDiaryImage(file);
+    // Provider 대신 싱글톤 사용
+    final storage = StorageService.instance;
 
-    return url;
+    if (_isVideoPath(path)) {
+      // 영상 업로드
+      return await storage.uploadDiaryVideo(file);
+    } else {
+      // 이미지 업로드
+      return await storage.uploadDiaryImage(file);
+    }
+  }
+
+  Future<void> _save() async {
+    final provider = context.read<DiaryProvider>();
+    final date = provider.selectedDate;
+
+    if (_saving) return;
+
+    setState(() => _saving = true);
+
+    try {
+      final uploadedPath = await _ensureUploadedToStorage(_imagePath);
+
+      await provider.save(
+        emotion: _emotion,
+        title: _title.text,
+        content: _content.text,
+        imagePath: uploadedPath,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '저장됨 (${date.year}.${date.month}.${date.day})',
+          ),
+        ),
+      );
+
+      setState(() {
+        _imagePath = uploadedPath;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('저장 중 오류가 발생했습니다: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
   }
 
   @override
@@ -114,8 +192,6 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('삭제 완료')),
                       );
-
-                      /// pop 제거 (탭 루트 화면이기 때문에)
                     },
               child: const Text(
                 '삭제',
@@ -125,33 +201,17 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
 
             /// 저장 버튼
             TextButton(
-              onPressed: () async {
-                final uploadedPath =
-                    await _ensureUploadedToStorage(_imagePath);
-
-                await provider.save(
-                  emotion: _emotion,
-                  title: _title.text,
-                  content: _content.text,
-                  imagePath: uploadedPath,
-                );
-
-                if (!mounted) return;
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('저장됨')),
-                );
-
-                setState(() {
-                  _imagePath = uploadedPath;
-                });
-
-                /// pop 없음
-              },
-              child: const Text(
-                '저장',
-                style: TextStyle(color: Colors.blue),
-              ),
+              onPressed: _saving ? null : _save,
+              child: _saving
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text(
+                      '저장',
+                      style: TextStyle(color: Colors.blue),
+                    ),
             ),
           ],
         ),
@@ -169,7 +229,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                 const SizedBox(height: 8),
                 EmotionPicker(
                   value: _emotion,
-                  onSelected: (v) {          // 🔴 여기 수정 (onChanged → onSelected)
+                  onSelected: (v) {
                     setState(() {
                       _emotion = v;
                     });
@@ -201,7 +261,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                 ),
                 const SizedBox(height: 16),
 
-                /// 이미지 추가/제거 버튼
+                /// 이미지/영상 추가/제거 버튼
                 Row(
                   children: [
                     ElevatedButton.icon(
@@ -209,20 +269,26 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                       icon: const Icon(Icons.photo),
                       label: const Text('사진 추가'),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      onPressed: _pickVideo,
+                      icon: const Icon(Icons.videocam),
+                      label: const Text('영상 추가'),
+                    ),
+                    const SizedBox(width: 8),
                     if (_imagePath != null)
                       TextButton.icon(
                         onPressed: _clearImage,
                         icon: const Icon(Icons.delete_outline),
-                        label: const Text('사진 제거'),
+                        label: const Text('첨부 제거'),
                       ),
                   ],
                 ),
 
                 const SizedBox(height: 20),
 
-                /// 이미지 미리보기
-                _buildImagePreview(context),
+                /// 이미지/영상 미리보기
+                _buildMediaPreview(context),
               ],
             ),
           ),
@@ -232,20 +298,48 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
   }
 
   /// -------------------------------
-  /// 이미지 미리보기
+  /// 이미지/영상 미리보기
   /// -------------------------------
-  Widget _buildImagePreview(BuildContext context) {
+  Widget _buildMediaPreview(BuildContext context) {
     if (_imagePath == null) return const SizedBox.shrink();
 
-    final isUrl = _imagePath!.startsWith('http');
+    final path = _imagePath!;
     final radius = BorderRadius.circular(12);
+
+    // 영상일 때
+    if (_isVideoPath(path)) {
+      return Container(
+        height: 200,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          color: Theme.of(context).colorScheme.surfaceVariant,
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            const Icon(Icons.videocam, size: 32),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '영상이 선택되었습니다.\n저장 후 상세 화면에서 재생할 수 있습니다.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 이미지일 때
+    final isUrl = path.startsWith('http');
 
     if (isUrl) {
       // URL 이미지
       return ClipRRect(
         borderRadius: radius,
         child: Image.network(
-          _imagePath!,
+          path,
           height: 220,
           width: double.infinity,
           fit: BoxFit.cover,
@@ -255,7 +349,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
     }
 
     // 로컬 이미지
-    final file = File(_imagePath!);
+    final file = File(path);
     if (!file.existsSync()) return _errorImg(context);
 
     return ClipRRect(
@@ -276,7 +370,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
       width: double.infinity,
       color: Theme.of(context).colorScheme.surfaceVariant,
       alignment: Alignment.center,
-      child: const Text('이미지를 불러올 수 없습니다.'),
+      child: const Text('이미지/영상을 불러올 수 없습니다.'),
     );
   }
 }
