@@ -157,8 +157,11 @@ class _CalendarPageState extends State<CalendarPage> {
 
                     // ✅ 일정 섹션 (다이어리 아래)
                     Expanded(
-                      child: _buildScheduleSection(context, selectedDate,
-                          schedules: schedules),
+                      child: _buildScheduleSection(
+                        context,
+                        selectedDate,
+                        schedules: schedules,
+                      ),
                     ),
                   ],
                 ),
@@ -203,10 +206,8 @@ class _CalendarPageState extends State<CalendarPage> {
       },
       onPageChanged: (focused) {
         _focusedDay = focused;
-        final first =
-            DateTime.utc(focused.year, focused.month, 1);
-        final last =
-            DateTime.utc(focused.year, focused.month + 1, 0);
+        final first = DateTime.utc(focused.year, focused.month, 1);
+        final last = DateTime.utc(focused.year, focused.month + 1, 0);
         context.read<ScheduleProvider>().setMonthRange(first, last);
       },
       onFormatChanged: (format) {
@@ -244,7 +245,9 @@ class _CalendarPageState extends State<CalendarPage> {
                   const SizedBox(width: 2),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 4, vertical: 1),
+                      horizontal: 4,
+                      vertical: 1,
+                    ),
                     decoration: BoxDecoration(
                       color: Theme.of(context)
                           .colorScheme
@@ -322,8 +325,7 @@ class _CalendarPageState extends State<CalendarPage> {
       itemCount: schedules.length,
       separatorBuilder: (_, __) => Divider(
         height: 16,
-        color:
-            Theme.of(context).colorScheme.outline.withOpacity(0.2),
+        color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
       ),
       itemBuilder: (context, index) {
         final s = schedules[index];
@@ -369,26 +371,21 @@ class _CalendarPageState extends State<CalendarPage> {
                   );
                 },
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         s.title,
-                        style:
-                            Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-                      if (s.memo != null &&
-                          s.memo!.trim().isNotEmpty) ...[
+                      if (s.memo != null && s.memo!.trim().isNotEmpty) ...[
                         const SizedBox(height: 2),
                         Text(
                           s.memo!,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall,
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
                     ],
