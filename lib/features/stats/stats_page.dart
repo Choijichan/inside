@@ -9,11 +9,11 @@ import 'emotion_bottle_chart.dart';
 Color _emotionColor(int emotion) {
   switch (emotion) {
     case 1:
-      return const Color(0xFFEF5350); // 매우 나쁨
+      return const Color.fromARGB(255, 47, 0, 255); // 매우 나쁨
     case 2:
-      return const Color(0xFFFFA726); // 나쁨
+      return const Color.fromARGB(255, 89, 255, 0); // 나쁨
     case 3:
-      return const Color(0xFF4DD0E1); // 보통
+      return const Color.fromARGB(255, 255, 242, 0); // 보통
     case 4:
       return const Color.fromARGB(255, 255, 136, 0); // 좋음
     case 5:
