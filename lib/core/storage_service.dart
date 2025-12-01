@@ -1,3 +1,4 @@
+// lib/core/storage_service.dart
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 
@@ -19,7 +20,7 @@ class StorageService {
     return await snapshot.ref.getDownloadURL();
   }
 
-  /// 영상 업로드도 동일
+  /// 영상 업로드 후 URL 반환
   Future<String> uploadDiaryVideo(File file) async {
     final fileName =
         '${DateTime.now().millisecondsSinceEpoch}_${file.uri.pathSegments.last}';
