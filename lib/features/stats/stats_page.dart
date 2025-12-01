@@ -5,23 +5,24 @@ import 'package:intl/intl.dart';
 import '../../data/drift/drift_database.dart';
 import 'emotion_bottle_chart.dart';
 
-/// 감정 인덱스(0~4) -> 색상 매핑 (전역 함수)
+/// 감정 인덱스(1~5) -> 색상 매핑
 Color _emotionColor(int emotion) {
   switch (emotion) {
-    case 0:
-      return const Color.fromARGB(255, 21, 0, 255); // 매우 나쁨
     case 1:
-      return const Color.fromARGB(255, 67, 250, 0); // 나쁨
+      return const Color(0xFFEF5350); // 매우 나쁨
     case 2:
-      return const Color.fromARGB(255, 245, 253, 1); // 보통
+      return const Color(0xFFFFA726); // 나쁨
     case 3:
-      return const Color(0xFFFFA726); // 좋음
+      return const Color(0xFF4DD0E1); // 보통
     case 4:
-      return const Color(0xFFEF5350); // 매우 좋음
+      return const Color.fromARGB(255, 255, 136, 0); // 좋음
+    case 5:
+      return const Color.fromARGB(255, 255, 0, 0); // 매우 좋음
     default:
-      return Colors.grey;
+      return Colors.grey; // 혹시 1~5 범위 밖 값이 들어오면 회색
   }
 }
+
 
 /// 감정 카운트 맵 -> 병 안에 들어갈 구슬 리스트로 변환 (전역 함수)
 List<EmotionBead> _buildBeadsFromCounts(Map<int, int> counts) {
