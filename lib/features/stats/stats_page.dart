@@ -13,9 +13,9 @@ Color _emotionColor(int emotion) {
     case 1:
       return const Color(0xFFFFA726); // 나쁨
     case 2:
-      return const Color(0xFF4DD0E1); // 보통
+      return const Color.fromARGB(255, 245, 253, 1); // 보통
     case 3:
-      return const Color(0xFF7E57C2); // 좋음
+      return const Color(0xFFFFA726); // 좋음
     case 4:
       return const Color(0xFFEF5350); // 매우 좋음
     default:
