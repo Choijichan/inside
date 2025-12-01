@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
+// ✅ intl 날짜 로케일 (TableCalendar에서 locale: 'ko_KR' 쓰기 위함)
+import 'package:intl/date_symbol_data_local.dart';
+
 // DI & Theme & Notification
 import 'core/di.dart';
 import 'core/theme.dart';
@@ -21,6 +24,9 @@ import 'features/schedule/schedule_provider.dart';
 /// ✅ 앱 시작 지점
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ TableCalendar 등에서 'ko_KR' 로케일을 쓰기 위한 초기화
+  await initializeDateFormatting('ko_KR', null);
 
   // 1) Firebase 초기화
   await Firebase.initializeApp(
