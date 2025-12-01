@@ -17,7 +17,7 @@ Color _emotionColor(int emotion) {
     case 3:
       return const Color(0xFF7E57C2); // 좋음
     case 4:
-      return const Color(0xFFFFC107); // 매우 좋음
+      return const Color(0xFFEF5350); // 매우 좋음
     default:
       return Colors.grey;
   }
