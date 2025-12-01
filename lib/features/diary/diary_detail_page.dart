@@ -15,7 +15,7 @@ class DiaryDetailPage extends StatelessWidget {
   });
 
   String _formatDate(DateTime d) {
-    // 🔥 여기만 수정: locale 인자('ko_KR') 제거
+    // locale('ko_KR') 제거한 버전
     return DateFormat('yyyy.MM.dd (E)').format(d.toLocal());
   }
 
@@ -110,14 +110,20 @@ class _MediaPreviewState extends State<_MediaPreview> {
   }
 
   void _initMedia() {
-    final p = widget.path;
+    final p = widget.path.trim();
+    if (p.isEmpty) return;
+
     _isNetwork = p.startsWith('http');
 
-    // 단순 확장자 기반으로 영상 여부 판별
-    final lower = p.toLowerCase();
+    // Firebase Storage URL처럼 ?alt=media&token=... 이 붙어도
+    // path 부분만 보고 확장자 판단
+    final uri = Uri.parse(p);
+    final pathLower = uri.path.toLowerCase();
+
     const videoExt = ['.mp4', '.mov', '.avi', '.mkv', '.webm'];
 
-    _isVideo = videoExt.any((ext) => lower.endsWith(ext));
+    _isVideo = videoExt.any((ext) => pathLower.endsWith(ext)) ||
+        pathLower.contains('diary_videos'); // 영상 전용 폴더명 기반
 
     if (_isVideo) {
       if (_isNetwork) {
@@ -125,6 +131,7 @@ class _MediaPreviewState extends State<_MediaPreview> {
       } else {
         _videoController = VideoPlayerController.file(File(p));
       }
+
       _videoController!.initialize().then((_) {
         if (!mounted) return;
         setState(() {
@@ -153,7 +160,7 @@ class _MediaPreviewState extends State<_MediaPreview> {
 
   @override
   Widget build(BuildContext context) {
-    // 영상이 아닌 경우: 이미지 처리
+    // 🔹 영상이 아닌 경우: 이미지 처리
     if (!_isVideo) {
       if (_isNetwork) {
         return ClipRRect(
@@ -176,6 +183,7 @@ class _MediaPreviewState extends State<_MediaPreview> {
         if (!file.existsSync()) {
           return Container(
             height: 220,
+            width: double.infinity,
             color: Theme.of(context).colorScheme.surfaceVariant,
             alignment: Alignment.center,
             child: const Text('이미지 파일이 존재하지 않습니다.'),
