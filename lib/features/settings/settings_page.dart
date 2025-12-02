@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/theme.dart';
 import '../../core/notification_service.dart';
 import '../../core/pin_lock.dart';
+import '../../core/auth_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -50,6 +52,79 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  /// 🔹 구글 계정 섹션
+  Widget _buildAccountSection(BuildContext context) {
+    final User? user = AuthService.instance.currentUser;
+
+    if (user == null) {
+      // 로그인 안 된 상태
+      return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        child: ListTile(
+          leading: const Icon(Icons.login),
+          title: const Text('Google 계정으로 로그인'),
+          subtitle: const Text('다이어리 백업/동기화를 위한 계정 연동'),
+          onTap: () async {
+            try {
+              final u = await AuthService.instance.signInWithGoogle();
+              if (u == null) return; // 사용자 취소
+
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('로그인 완료: ${u.displayName ?? '사용자'}'),
+                ),
+              );
+              setState(() {}); // UI 갱신
+            } catch (e) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('로그인 실패: $e')),
+              );
+            }
+          },
+        ),
+      );
+    } else {
+      // 로그인 된 상태
+      return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          children: [
+            ListTile(
+              leading: CircleAvatar(
+                backgroundImage: user.photoURL != null
+                    ? NetworkImage(user.photoURL!)
+                    : null,
+                child: user.photoURL == null
+                    ? const Icon(Icons.person)
+                    : null,
+              ),
+              title: Text(user.displayName ?? '이름 없음'),
+              subtitle: Text(user.email ?? '이메일 없음'),
+            ),
+            const Divider(height: 0),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text(
+                '로그아웃',
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: () async {
+                await AuthService.instance.signOut();
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('로그아웃되었습니다.')),
+                );
+                setState(() {});
+              },
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeCtrl = context.watch<ThemeController>();
@@ -65,6 +140,21 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         children: [
           const SizedBox(height: 8),
+
+          // 🔹 계정 섹션
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              '계정',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildAccountSection(context),
+          const SizedBox(height: 16),
+          const Divider(),
+
+          // 🎨 테마 설정
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
@@ -214,6 +304,14 @@ class _PinEditDialogState extends State<_PinEditDialog> {
     await widget.pinLock.setPin(newPin);
     if (!mounted) return;
     Navigator.of(context).pop(true);
+  }
+
+  @override
+  void dispose() {
+    _currentPin.dispose();
+    _newPin.dispose();
+    _confirmPin.dispose();
+    super.dispose();
   }
 
   @override
