@@ -170,7 +170,10 @@ class _CalendarPageState extends State<CalendarPage> {
           ],
         ),
       ),
+
+      // ✅ 여기 heroTag 추가해서 RootScaffold의 FAB와 구분
       floatingActionButton: FloatingActionButton(
+        heroTag: 'calendarFab',
         onPressed: () async {
           // 선택한 날짜 기준으로 새 일정 추가
           await openScheduleDialog(
