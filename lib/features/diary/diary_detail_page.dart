@@ -129,17 +129,17 @@ class DiaryDetailPage extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
-                ListView.builder(
-                  itemCount: medias.length,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemBuilder: (context, index) {
-                    final media = medias[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _MediaPreview(media: media),
-                    );
-                  },
+
+                // 🔥 ListView.builder 대신 Column으로 그냥 다 깔아버리기
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final media in medias)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _MediaPreview(media: media),
+                      ),
+                  ],
                 ),
               ],
             ],
