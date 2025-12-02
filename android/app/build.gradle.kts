@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "diary_calendar_app"
+    namespace = "com.example.myapp"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
