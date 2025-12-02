@@ -1,5 +1,6 @@
 // lib/core/auth_service.dart
-C
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   AuthService._();
