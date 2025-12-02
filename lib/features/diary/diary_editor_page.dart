@@ -103,7 +103,11 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
     });
   }
 
+  /// -------------------------------
   /// 로컬 파일이면 Storage 업로드 → URL 반환
+  /// 업로드 실패 시에도 다이어리는 꼭 저장되도록
+  /// 로컬 경로(path)를 그대로 반환하도록 처리
+  /// -------------------------------
   Future<String?> _ensureUploadedToStorage(String? path) async {
     if (path == null) return null;
     if (path.startsWith('http')) return path; // 이미 URL이면 그대로
@@ -114,12 +118,19 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
     // Provider 대신 싱글톤 사용
     final storage = StorageService.instance;
 
-    if (_isVideoPath(path)) {
-      // 영상 업로드
-      return await storage.uploadDiaryVideo(file);
-    } else {
-      // 이미지 업로드
-      return await storage.uploadDiaryImage(file);
+    try {
+      if (_isVideoPath(path)) {
+        // 영상 업로드
+        return await storage.uploadDiaryVideo(file);
+      } else {
+        // 이미지 업로드
+        return await storage.uploadDiaryImage(file);
+      }
+    } catch (e) {
+      // 🔥 업로드 실패 시 예외를 앱 전체로 올리지 않고
+      // 로컬 경로를 그대로 사용해서 다이어리 저장만은 되게끔 함
+      debugPrint('Storage upload failed, use local path instead: $e');
+      return path;
     }
   }
 
