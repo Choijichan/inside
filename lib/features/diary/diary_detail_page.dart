@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -36,9 +37,54 @@ class DiaryDetailPage extends StatelessWidget {
     }
   }
 
+  /// 확장자/경로 기반으로 영상 여부 판단 (호환용)
+  bool _isVideoPath(String path) {
+    final lower = path.toLowerCase();
+    return lower.endsWith('.mp4') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.m4v') ||
+        lower.endsWith('.avi') ||
+        lower.endsWith('.mkv') ||
+        lower.endsWith('.webm') ||
+        lower.contains('diary_videos');
+  }
+
+  /// imagePath(String?)를 여러 개의 미디어 리스트로 파싱
+  /// - 새 버전: JSON 리스트 문자열
+  /// - 옛 버전: 단일 경로 문자열
+  List<_DiaryMedia> _decodeMedias(String? raw) {
+    if (raw == null) return [];
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return [];
+
+    // 새 버전(JSON 리스트)
+    if (trimmed.startsWith('[')) {
+      try {
+        final List list = jsonDecode(trimmed) as List;
+        return list.map((e) {
+          final map = e as Map<String, dynamic>;
+          final path = map['path'] as String;
+          final isVideo = (map['isVideo'] as bool?) ?? _isVideoPath(path);
+          return _DiaryMedia(path: path, isVideo: isVideo);
+        }).toList();
+      } catch (e) {
+        debugPrint('Failed to decode medias json: $e');
+        // 파싱 실패하면 그냥 무시
+        return [];
+      }
+    }
+
+    // 옛 버전: 단일 문자열 그대로 사용
+    final isVideo = _isVideoPath(trimmed);
+    return [
+      _DiaryMedia(path: trimmed, isVideo: isVideo),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final dateLabel = _formatDate(diary.date);
+    final medias = _decodeMedias(diary.imagePath);
 
     return Scaffold(
       appBar: AppBar(
@@ -76,10 +122,26 @@ class DiaryDetailPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              /// 이미지 or 영상 있으면 표시
-              if (diary.imagePath != null &&
-                  diary.imagePath!.trim().isNotEmpty)
-                _MediaPreview(path: diary.imagePath!),
+              /// 이미지/영상 여러 개 표시
+              if (medias.isNotEmpty) ...[
+                Text(
+                  '첨부된 사진/영상 (${medias.length})',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                ListView.builder(
+                  itemCount: medias.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    final media = medias[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _MediaPreview(media: media),
+                    );
+                  },
+                ),
+              ],
             ],
           ),
         ),
@@ -88,10 +150,21 @@ class DiaryDetailPage extends StatelessWidget {
   }
 }
 
-class _MediaPreview extends StatefulWidget {
+/// 내부에서 사용할 다이어리 미디어 모델
+class _DiaryMedia {
   final String path;
+  final bool isVideo;
 
-  const _MediaPreview({required this.path});
+  const _DiaryMedia({
+    required this.path,
+    required this.isVideo,
+  });
+}
+
+class _MediaPreview extends StatefulWidget {
+  final _DiaryMedia media;
+
+  const _MediaPreview({required this.media});
 
   @override
   State<_MediaPreview> createState() => _MediaPreviewState();
@@ -110,20 +183,22 @@ class _MediaPreviewState extends State<_MediaPreview> {
   }
 
   void _initMedia() {
-    final p = widget.path.trim();
+    final p = widget.media.path.trim();
     if (p.isEmpty) return;
 
     _isNetwork = p.startsWith('http');
 
-    // Firebase Storage URL처럼 ?alt=media&token=... 이 붙어도
-    // path 부분만 보고 확장자 판단
-    final uri = Uri.parse(p);
-    final pathLower = uri.path.toLowerCase();
+    // JSON에서 isVideo를 넘겨받긴 하지만,
+    // 혹시 몰라서 경로 확장자도 한 번 더 체크
+    bool isVideoByExt() {
+      final uri = Uri.parse(p);
+      final pathLower = uri.path.toLowerCase();
+      const videoExt = ['.mp4', '.mov', '.avi', '.mkv', '.webm'];
+      return videoExt.any((ext) => pathLower.endsWith(ext)) ||
+          pathLower.contains('diary_videos');
+    }
 
-    const videoExt = ['.mp4', '.mov', '.avi', '.mkv', '.webm'];
-
-    _isVideo = videoExt.any((ext) => pathLower.endsWith(ext)) ||
-        pathLower.contains('diary_videos'); // 영상 전용 폴더명 기반
+    _isVideo = widget.media.isVideo || isVideoByExt();
 
     if (_isVideo) {
       if (_isNetwork) {
@@ -144,7 +219,8 @@ class _MediaPreviewState extends State<_MediaPreview> {
   @override
   void didUpdateWidget(covariant _MediaPreview oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.path != widget.path) {
+    if (oldWidget.media.path != widget.media.path ||
+        oldWidget.media.isVideo != widget.media.isVideo) {
       _videoController?.dispose();
       _videoController = null;
       _initialized = false;
@@ -160,13 +236,15 @@ class _MediaPreviewState extends State<_MediaPreview> {
 
   @override
   Widget build(BuildContext context) {
+    final path = widget.media.path;
+
     // 🔹 영상이 아닌 경우: 이미지 처리
     if (!_isVideo) {
       if (_isNetwork) {
         return ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: Image.network(
-            widget.path,
+            path,
             height: 220,
             width: double.infinity,
             fit: BoxFit.cover,
@@ -179,7 +257,7 @@ class _MediaPreviewState extends State<_MediaPreview> {
           ),
         );
       } else {
-        final file = File(widget.path);
+        final file = File(path);
         if (!file.existsSync()) {
           return Container(
             height: 220,
