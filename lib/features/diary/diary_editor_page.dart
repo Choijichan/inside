@@ -11,7 +11,7 @@ import 'package:diary_calendar_app/features/diary/diary_provider.dart';
 
 /// 다이어리 첨부 미디어 (이미지 or 영상)
 class DiaryMedia {
-  final String path; // 로컬 경로 또는 URL
+  final String path; // 로컬 파일 경로 또는 URL
   final bool isVideo;
 
   DiaryMedia({
@@ -40,7 +40,7 @@ class DiaryEditorPage extends StatefulWidget {
 }
 
 class _DiaryEditorPageState extends State<DiaryEditorPage> {
-  static const int _maxMedias = 60; // 사진+영상 최대 개수
+  static const int _maxMedias = 60; // 사진 + 영상 총합 최대 개수
 
   final _title = TextEditingController();
   final _content = TextEditingController();
@@ -66,7 +66,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
         _emotion = d.emotion;
         _title.text = d.title;
         _content.text = d.content;
-        _medias = _decodeMediasFromJson(d.imagePath);
+        _medias = _decodeMediasFromRaw(d.imagePath);
       } else {
         _emotion = 3;
         _title.clear();
@@ -85,32 +85,30 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
     super.dispose();
   }
 
-  /// 확장자/경로 기반 영상 여부
-  bool _isVideoPathByExt(String path) {
+  bool _isVideoPath(String path) {
     final lower = path.toLowerCase();
     return lower.endsWith('.mp4') ||
         lower.endsWith('.mov') ||
         lower.endsWith('.m4v') ||
         lower.endsWith('.avi') ||
-        lower.endsWith('.mkv') ||
         lower.endsWith('.webm') ||
-        lower.contains('diary_videos');
+        lower.endsWith('.mkv') ||
+        lower.contains('diary_videos'); // Storage 폴더 이름 기준으로도 체크
   }
 
-  /// DB에 저장된 imagePath(String?) → List<DiaryMedia>로 파싱
-  /// - 새 방식: JSON 리스트
-  /// - 옛 방식: 단일 경로 문자열
-  List<DiaryMedia> _decodeMediasFromJson(String? raw) {
+  /// DB의 imagePath(String?)를 List<DiaryMedia>로 변환
+  List<DiaryMedia> _decodeMediasFromRaw(String? raw) {
     if (raw == null) return [];
     final trimmed = raw.trim();
     if (trimmed.isEmpty) return [];
 
-    // 새 버전(JSON 리스트)
+    // 새 버전: JSON 리스트
     if (trimmed.startsWith('[')) {
       try {
         final List list = jsonDecode(trimmed) as List;
         return list
-            .map((e) => DiaryMedia.fromJson(e as Map<String, dynamic>))
+            .map((e) =>
+                DiaryMedia.fromJson(e as Map<String, dynamic>))
             .toList();
       } catch (e) {
         debugPrint('Failed to decode medias json: $e');
@@ -118,14 +116,14 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
       }
     }
 
-    // 옛 버전: 단일 문자열 그대로 사용
-    final isVideo = _isVideoPathByExt(trimmed);
+    // 옛 버전: 단일 문자열만 저장돼 있던 경우
+    final isVideo = _isVideoPath(trimmed);
     return [
       DiaryMedia(path: trimmed, isVideo: isVideo),
     ];
   }
 
-  /// List<DiaryMedia> → JSON 문자열로 인코딩
+  /// List<DiaryMedia> → JSON 문자열
   String? _encodeMediasToJson(List<DiaryMedia> medias) {
     if (medias.isEmpty) return null;
     final list = medias.map((m) => m.toJson()).toList();
@@ -133,9 +131,9 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
   }
 
   /// -------------------------------
-  /// 사진 선택 (갤러리, 여러 장)
+  /// 사진 여러 장 선택 (갤러리)
   /// -------------------------------
-  Future<void> _pickImage() async {
+  Future<void> _pickImages() async {
     if (_medias.length >= _maxMedias) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('최대 $_maxMedias개까지 첨부할 수 있습니다.')),
@@ -143,15 +141,15 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
       return;
     }
 
-    // 여러 장 선택
+    // image_picker는 사진은 여러장 선택 지원 (pickMultiImage)
     final xfiles = await _picker.pickMultiImage();
     if (xfiles == null || xfiles.isEmpty) return;
 
     final remain = _maxMedias - _medias.length;
-    final toAdd = xfiles.take(remain).toList();
+    final selected = xfiles.take(remain);
 
     setState(() {
-      for (final x in toAdd) {
+      for (final x in selected) {
         _medias.add(
           DiaryMedia(
             path: x.path, // 로컬 파일 경로
@@ -163,7 +161,9 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
   }
 
   /// -------------------------------
-  /// 영상 선택 (갤러리, 한 번에 1개지만 여러 번 추가 가능)
+  /// 영상 선택 (갤러리)
+  /// (한 번에 여러 개 선택은 image_picker가 미지원이어서
+  /// 버튼 여러 번 눌러서 여러 개 추가하는 방식)
   /// -------------------------------
   Future<void> _pickVideo() async {
     if (_medias.length >= _maxMedias) {
@@ -204,18 +204,20 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
   }
 
   /// -------------------------------
-  /// 모든 미디어 Storage 업로드 시도
-  /// - 성공: URL로 교체
-  /// - 실패: 로컬 경로 유지
+  /// 로컬 파일이면 Storage 업로드 → URL 반환 (여러 개)
+  /// 업로드 실패 시에도 다이어리는 꼭 저장되도록
+  /// 로컬 경로(path)는 그대로 유지
   /// -------------------------------
-  Future<List<DiaryMedia>> _uploadAllMedias(List<DiaryMedia> medias) async {
+  Future<List<DiaryMedia>> _uploadAllMedias(
+      List<DiaryMedia> medias) async {
     final storage = StorageService.instance;
+
     final List<DiaryMedia> result = [];
 
     for (final media in medias) {
       final path = media.path;
 
-      // 이미 URL이면 그대로
+      // 이미 URL이면 그대로 사용
       if (path.startsWith('http')) {
         result.add(media);
         continue;
@@ -223,6 +225,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
 
       final file = File(path);
       if (!file.existsSync()) {
+        // 파일이 실제로 없으면 건너뜀
         debugPrint('File not found, skip: $path');
         continue;
       }
@@ -242,6 +245,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
           ),
         );
       } catch (e) {
+        // 업로드 실패 시 로컬 경로 유지
         debugPrint('Storage upload failed, keep local path: $e');
         result.add(media);
       }
@@ -267,7 +271,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
         emotion: _emotion,
         title: _title.text,
         content: _content.text,
-        imagePath: mediaJson, // 기존 imagePath를 JSON 저장용으로 재사용
+        imagePath: mediaJson, // JSON 문자열로 저장
       );
 
       if (!mounted) return;
@@ -394,9 +398,9 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                 Row(
                   children: [
                     ElevatedButton.icon(
-                      onPressed: _pickImage,
+                      onPressed: _pickImages,
                       icon: const Icon(Icons.photo),
-                      label: const Text('사진 추가'),
+                      label: const Text('사진 여러 장'),
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton.icon(
@@ -416,7 +420,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
 
                 const SizedBox(height: 20),
 
-                /// 이미지/영상 미리보기 (여러 개 + 순서 번호)
+                /// 이미지/영상 미리보기 (순번 표시)
                 _buildMediaPreview(context),
               ],
             ),
@@ -427,7 +431,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
   }
 
   /// -------------------------------
-  /// 이미지/영상 미리보기 (여러 개 + 순서 숫자)
+  /// 이미지/영상 미리보기 (여러 개 + 순번)
   /// -------------------------------
   Widget _buildMediaPreview(BuildContext context) {
     if (_medias.isEmpty) return const SizedBox.shrink();
@@ -441,125 +445,129 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
         ),
         const SizedBox(height: 8),
 
-        // 간단히 세로로 나열 + 각 항목에 순서 배지 표시
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (int i = 0; i < _medias.length; i++)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _buildMediaItem(context, _medias[i], i),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
+        // 가로로 스크롤되는 썸네일 리스트
+        SizedBox(
+          height: 120,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _medias.length,
+            itemBuilder: (context, index) {
+              final media = _medias[index];
+              final path = media.path;
 
-  Widget _buildMediaItem(BuildContext context, DiaryMedia media, int index) {
-    final radius = BorderRadius.circular(12);
-    final order = index + 1;
-    final path = media.path;
+              Widget thumb;
+              final radius = BorderRadius.circular(12);
 
-    Widget child;
+              if (media.isVideo) {
+                // 영상은 아이콘 + 텍스트 형태로 썸네일
+                thumb = Container(
+                  width: 140,
+                  decoration: BoxDecoration(
+                    borderRadius: radius,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surfaceVariant,
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.videocam),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '영상 ${index + 1}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              } else {
+                // 이미지 썸네일
+                final isUrl = path.startsWith('http');
+                if (isUrl) {
+                  thumb = ClipRRect(
+                    borderRadius: radius,
+                    child: Image.network(
+                      path,
+                      width: 140,
+                      height: 120,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          _errorImg(context),
+                    ),
+                  );
+                } else {
+                  final file = File(path);
+                  if (!file.existsSync()) {
+                    thumb = _errorImg(context);
+                  } else {
+                    thumb = ClipRRect(
+                      borderRadius: radius,
+                      child: Image.file(
+                        file,
+                        width: 140,
+                        height: 120,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            _errorImg(context),
+                      ),
+                    );
+                  }
+                }
+              }
 
-    if (media.isVideo) {
-      // 영상일 때
-      child = Container(
-        height: 80,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: radius,
-          color: Theme.of(context).colorScheme.surfaceVariant,
-        ),
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            const Icon(Icons.videocam, size: 28),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                '영상 첨부됨 (#$order)\n저장 후 상세 화면에서 재생할 수 있습니다.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ),
-          ],
-        ),
-      );
-    } else {
-      // 이미지일 때
-      final isUrl = path.startsWith('http');
-
-      if (isUrl) {
-        child = ClipRRect(
-          borderRadius: radius,
-          child: Image.network(
-            path,
-            height: 150,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _errorImg(context),
-          ),
-        );
-      } else {
-        final file = File(path);
-        if (!file.existsSync()) {
-          child = _errorImg(context);
-        } else {
-          child = ClipRRect(
-            borderRadius: radius,
-            child: Image.file(
-              file,
-              height: 150,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _errorImg(context),
-            ),
-          );
-        }
-      }
-    }
-
-    return Stack(
-      children: [
-        child,
-        // 왼쪽 상단에 순서 번호 뱃지
-        Positioned(
-          top: 6,
-          left: 6,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.black54,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              order.toString(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ),
-        // 오른쪽 상단에 삭제 버튼
-        Positioned(
-          top: 4,
-          right: 4,
-          child: InkWell(
-            onTap: () => _removeMediaAt(index),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: const EdgeInsets.all(4),
-              child: const Icon(
-                Icons.close,
-                size: 16,
-                color: Colors.white,
-              ),
-            ),
+              // 순서 번호 배지 (1,2,3…)
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Stack(
+                  children: [
+                    thumb,
+                    Positioned(
+                      top: 4,
+                      left: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${index + 1}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: InkWell(
+                        onTap: () => _removeMediaAt(index),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.all(4),
+                          child: const Icon(
+                            Icons.close,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ),
       ],
@@ -568,11 +576,11 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
 
   Widget _errorImg(BuildContext context) {
     return Container(
-      height: 150,
-      width: double.infinity,
+      width: 140,
+      height: 120,
       color: Theme.of(context).colorScheme.surfaceVariant,
       alignment: Alignment.center,
-      child: const Text('이미지/영상을 불러올 수 없습니다.'),
+      child: const Text('불러올 수 없음'),
     );
   }
 }
