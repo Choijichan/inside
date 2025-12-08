@@ -122,7 +122,7 @@ class DiaryDetailPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              /// 이미지/영상 여러 개 표시
+              /// 이미지/영상 여러 개 슬라이드
               if (medias.isNotEmpty) ...[
                 Text(
                   '첨부된 사진/영상 (${medias.length})',
@@ -130,16 +130,42 @@ class DiaryDetailPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
 
-                // 🔥 ListView.builder 대신 Column으로 그냥 다 깔아버리기
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final media in medias)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _MediaPreview(media: media),
-                      ),
-                  ],
+                SizedBox(
+                  height: 260,
+                  child: PageView.builder(
+                    itemCount: medias.length,
+                    itemBuilder: (context, index) {
+                      final media = medias[index];
+                      return Stack(
+                        children: [
+                          Center(
+                            child: _MediaPreview(media: media),
+                          ),
+                          Positioned(
+                            right: 12,
+                            top: 12,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                '${index + 1} / ${medias.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ],
             ],
@@ -250,7 +276,8 @@ class _MediaPreviewState extends State<_MediaPreview> {
             fit: BoxFit.cover,
             errorBuilder: (context, error, stack) => Container(
               height: 220,
-              color: Theme.of(context).colorScheme.surfaceVariant,
+              color:
+                  Theme.of(context).colorScheme.surfaceVariant,
               alignment: Alignment.center,
               child: const Text('이미지를 불러올 수 없습니다.'),
             ),
@@ -262,7 +289,8 @@ class _MediaPreviewState extends State<_MediaPreview> {
           return Container(
             height: 220,
             width: double.infinity,
-            color: Theme.of(context).colorScheme.surfaceVariant,
+            color:
+                Theme.of(context).colorScheme.surfaceVariant,
             alignment: Alignment.center,
             child: const Text('이미지 파일이 존재하지 않습니다.'),
           );
@@ -276,7 +304,8 @@ class _MediaPreviewState extends State<_MediaPreview> {
             fit: BoxFit.cover,
             errorBuilder: (context, error, stack) => Container(
               height: 220,
-              color: Theme.of(context).colorScheme.surfaceVariant,
+              color:
+                  Theme.of(context).colorScheme.surfaceVariant,
               alignment: Alignment.center,
               child: const Text('이미지를 불러올 수 없습니다.'),
             ),
