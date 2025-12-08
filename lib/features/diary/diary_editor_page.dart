@@ -400,7 +400,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                     ElevatedButton.icon(
                       onPressed: _pickImages,
                       icon: const Icon(Icons.photo),
-                      label: const Text('사진 여러 장'),
+                      label: const Text('사진 추가'),
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton.icon(
