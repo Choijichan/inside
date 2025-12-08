@@ -23,9 +23,9 @@ class DiaryDetailPage extends StatelessWidget {
   String _emotionLabel(int emotion) {
     switch (emotion) {
       case 1:
-        return '😭 매우 안 좋음';
+        return '😭 매우 나쁨';
       case 2:
-        return '☹️ 안 좋음';
+        return '☹️ 나쁨';
       case 3:
         return '😐 보통';
       case 4:
