@@ -55,9 +55,9 @@ class _RootScaffoldState extends State<RootScaffold> {
         ],
       ),
 
-      /// 다이어리 작성 버튼 (항상 가운데)
+      // 다이어리 작성 버튼 (항상 가운데)
       floatingActionButton: FloatingActionButton(
-        heroTag: 'rootDiaryFab', // ✅ Hero 태그 직접 지정 (중복 방지)
+        heroTag: 'rootDiaryFab', // Hero 태그 직접 지정 (중복 방지)
         onPressed: () {
           Navigator.of(context).push(
             MaterialPageRoute(
