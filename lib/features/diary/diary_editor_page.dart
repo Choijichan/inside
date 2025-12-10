@@ -319,7 +319,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
               ),
             ),
 
-            /// 저장 버튼
+            // 저장 버튼
             TextButton(
               onPressed: _saving ? null : _save,
               child: _saving
@@ -341,7 +341,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                /// 감정 선택
+                // 감정 선택
                 Text(
                   '오늘 기분은 어떤가요?',
                   style: Theme.of(context).textTheme.titleMedium,
@@ -358,7 +358,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
 
                 const SizedBox(height: 20),
 
-                /// 제목
+                // 제목
                 TextField(
                   controller: _title,
                   decoration: const InputDecoration(
@@ -368,7 +368,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                 ),
                 const SizedBox(height: 16),
 
-                /// 내용
+                // 내용
                 TextField(
                   controller: _content,
                   decoration: const InputDecoration(
@@ -381,7 +381,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
                 ),
                 const SizedBox(height: 16),
 
-                /// 이미지/영상 추가/제거 버튼
+                // 이미지/영상 추가/제거 버튼
                 Row(
                   children: [
                     ElevatedButton.icon(
@@ -407,7 +407,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
 
                 const SizedBox(height: 20),
 
-                /// 이미지/영상 미리보기 (순번 표시)
+                // 이미지/영상 미리보기 (순번 표시)
                 _buildMediaPreview(context),
               ],
             ),
@@ -417,9 +417,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
     );
   }
 
-  /// -------------------------------
-  /// 이미지/영상 미리보기 (여러 개 + 순번)
-  /// -------------------------------
+  // 이미지/영상 미리보기 (여러 개 + 순번)
   Widget _buildMediaPreview(BuildContext context) {
     if (_medias.isEmpty) return const SizedBox.shrink();
 

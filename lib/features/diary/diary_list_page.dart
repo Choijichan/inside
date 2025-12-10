@@ -26,7 +26,7 @@ class _DiaryListPageState extends State<DiaryListPage> {
   }
 
   Future<void> _load() async {
-    // ✅ Drift 기본 쿼리로 diaries 전체 가져오기
+    // Drift 기본 쿼리로 diaries 전체 가져오기
     final query = _db.select(_db.diaries)
       ..orderBy([
         (tbl) => drift.OrderingTerm(
