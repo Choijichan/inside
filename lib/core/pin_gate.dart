@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'pin_lock.dart';
 import '../root_scaffold.dart';
-import '../features/lock/lock_screen.dart'; // 🔐 PIN 입력 화면
+import '../features/lock/lock_screen.dart'; //  PIN 입력 화면
 
 class PinGate extends StatelessWidget {
   const PinGate({super.key});

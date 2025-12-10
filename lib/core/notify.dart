@@ -9,9 +9,7 @@ class NotificationService {
 
   Future<void> init() async {
     if (_inited) return;
-    // tz database
     tzdata.initializeTimeZones();
-    // Assume device's local timezone is correct.
     tz.setLocalLocation(tz.getLocation(DateTime.now().timeZoneName));
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -25,7 +23,6 @@ class NotificationService {
     _inited = true;
 
     if (Platform.isAndroid) {
-      // Android 13+ runtime permission is handled by plugin on show; ensure channel exists.
       const channel = AndroidNotificationChannel(
         'daily_reminder',
         'Daily Reminder',
