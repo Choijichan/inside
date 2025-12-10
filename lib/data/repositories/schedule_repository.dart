@@ -1,7 +1,3 @@
-/// ScheduleRepository
-///  - startMin/endMin은 0~1440
-///  - view단에서 DatePicker/TimePicker 값 → 분 단위로 환산해 저장
-///  - 로컬 DB + Firestore 같이 관리
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:drift/drift.dart';
 import '../drift/drift_database.dart';
@@ -43,7 +39,7 @@ class ScheduleRepository {
   Stream<List<Schedule>> watchRange(DateTime start, DateTime end) =>
       _db.watchSchedulesInRange(normalize(start), normalize(end));
 
-  /// 일정 생성 + Firestore 저장
+  // 일정 생성 + Firestore 저장
   Future<int> insert({
     required DateTime date,
     required int startMin,
@@ -81,7 +77,7 @@ class ScheduleRepository {
     return id;
   }
 
-  /// 일정 수정 + Firestore 업데이트
+  // 일정 수정 + Firestore 업데이트
   Future<bool> update({
     required int id,
     required DateTime date,
@@ -124,7 +120,7 @@ class ScheduleRepository {
     return ok;
   }
 
-  /// 일정 삭제 + Firestore 삭제
+  // 일정 삭제 + Firestore 삭제
   Future<int> delete(int id) async {
     // 1) 로컬에서 삭제
     final rows = await _db.deleteSchedule(id);

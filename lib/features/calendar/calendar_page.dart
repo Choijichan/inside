@@ -143,7 +143,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     ),
                     const SizedBox(height: 8),
 
-                    // ✅ 다이어리 섹션 (항상 위)
+                    // 다이어리 섹션 (항상 위)
                     _buildDiarySection(context, currentDiary),
 
                     const SizedBox(height: 16),
@@ -155,7 +155,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     ),
                     const SizedBox(height: 8),
 
-                    // ✅ 일정 섹션 (다이어리 아래)
+                    // 일정 섹션 (다이어리 아래)
                     Expanded(
                       child: _buildScheduleSection(
                         context,
@@ -171,7 +171,7 @@ class _CalendarPageState extends State<CalendarPage> {
         ),
       ),
 
-      // ✅ 여기 heroTag 추가해서 RootScaffold의 FAB와 구분
+      // 여기 heroTag 추가해서 RootScaffold의 FAB와 구분
       floatingActionButton: FloatingActionButton(
         heroTag: 'calendarFab',
         onPressed: () async {
@@ -272,7 +272,7 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-  /// 상단 다이어리 섹션
+  // 상단 다이어리 섹션
   Widget _buildDiarySection(BuildContext context, Diary? diary) {
     if (diary == null) {
       return Text(
@@ -306,7 +306,7 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-  /// 하단 일정 섹션
+  // 하단 일정 섹션
   Widget _buildScheduleSection(
     BuildContext context,
     DateTime selectedDate, {
