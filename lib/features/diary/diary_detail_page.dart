@@ -37,7 +37,7 @@ class DiaryDetailPage extends StatelessWidget {
     }
   }
 
-  /// 확장자/경로 기반으로 영상 여부 판단 (호환용)
+  // 확장자/경로 기반으로 영상 여부 판단 (호환용)
   bool _isVideoPath(String path) {
     final lower = path.toLowerCase();
     return lower.endsWith('.mp4') ||
@@ -49,9 +49,9 @@ class DiaryDetailPage extends StatelessWidget {
         lower.contains('diary_videos');
   }
 
-  /// imagePath(String?)를 여러 개의 미디어 리스트로 파싱
-  /// - 새 버전: JSON 리스트 문자열
-  /// - 옛 버전: 단일 경로 문자열
+  // imagePath(String?)를 여러 개의 미디어 리스트로 파싱
+  // - 새 버전: JSON 리스트 문자열
+  // - 옛 버전: 단일 경로 문자열
   List<_DiaryMedia> _decodeMedias(String? raw) {
     if (raw == null) return [];
     final trimmed = raw.trim();
@@ -96,7 +96,7 @@ class DiaryDetailPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /// 날짜 + 감정
+              // 날짜 + 감정
               Text(
                 dateLabel,
                 style: Theme.of(context).textTheme.labelLarge,
@@ -108,21 +108,21 @@ class DiaryDetailPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              /// 제목
+              // 제목
               Text(
                 diary.title.isEmpty ? '(제목 없음)' : diary.title,
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 16),
 
-              /// 본문
+              // 본문
               Text(
                 diary.content,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 24),
 
-              /// 이미지/영상 여러 개 슬라이드
+              // 이미지/영상 여러 개 슬라이드
               if (medias.isNotEmpty) ...[
                 Text(
                   '첨부된 사진/영상 (${medias.length})',
@@ -176,7 +176,7 @@ class DiaryDetailPage extends StatelessWidget {
   }
 }
 
-/// 내부에서 사용할 다이어리 미디어 모델
+// 내부에서 사용할 다이어리 미디어 모델
 class _DiaryMedia {
   final String path;
   final bool isVideo;
@@ -264,7 +264,7 @@ class _MediaPreviewState extends State<_MediaPreview> {
   Widget build(BuildContext context) {
     final path = widget.media.path;
 
-    // 🔹 영상이 아닌 경우: 이미지 처리
+    // 영상이 아닌 경우: 이미지 처리
     if (!_isVideo) {
       if (_isNetwork) {
         return ClipRRect(
@@ -314,7 +314,7 @@ class _MediaPreviewState extends State<_MediaPreview> {
       }
     }
 
-    // 🔹 영상인 경우
+    // 영상인 경우
     if (!_initialized || _videoController == null) {
       return Container(
         height: 220,
