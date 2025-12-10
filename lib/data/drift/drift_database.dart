@@ -1,12 +1,3 @@
-/// Drift database for Calendar + Diary app
-/// -------------------------------------------------------------
-/// - Tables:
-///   * Diaries    : 하루 1개 일기(감정/제목/본문/이미지 경로)
-///   * Schedules  : 날짜별 일정(시작/종료 분 단위)
-/// - 날짜는 모두 "UTC 자정"으로 정규화하여 저장
-/// - Firestore/Storage 연동은 Repository에서 처리
-/// -------------------------------------------------------------
-
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -15,20 +6,18 @@ import 'package:path/path.dart' as p;
 
 part 'drift_database.g.dart';
 
-/// ------------------------------
-/// Diaries 테이블
-/// ------------------------------
+// Diaries 테이블
 class Diaries extends Table {
   IntColumn get id => integer().autoIncrement()();
 
-  /// UTC 자정
+  // UTC 자정
   DateTimeColumn get date => dateTime()();
 
   IntColumn get emotion => integer()(); // 1~5 감정 값
   TextColumn get title => text()();
   TextColumn get content => text()();
 
-  /// 이미지 또는 영상 (Firebase Storage URL 또는 로컬 경로)
+  // 이미지 또는 영상 (Firebase Storage URL 또는 로컬 경로)
   TextColumn get imagePath => text().nullable()();
 
   DateTimeColumn get createdAt =>
@@ -38,25 +27,23 @@ class Diaries extends Table {
       dateTime().withDefault(currentDateAndTime)();
 }
 
-/// ------------------------------
-/// Schedules 테이블
-/// ------------------------------
+// Schedules 테이블
 class Schedules extends Table {
   IntColumn get id => integer().autoIncrement()();
 
-  /// UTC 자정 날짜
+  // UTC 자정 날짜
   DateTimeColumn get date => dateTime()();
 
-  /// 자정 기준 시작/끝 분 (0~1440)
+  // 자정 기준 시작/끝 분 (0~1440)
   IntColumn get startMin => integer()();
   IntColumn get endMin => integer()();
 
   TextColumn get title => text()();
   TextColumn get memo => text().nullable()();
 
-  /// Drift는 snake_case로 컬럼을 생성함:
-  /// startMin → start_min
-  /// endMin   → end_min
+  // Drift는 snake_case로 컬럼을 생성함:
+  // startMin → start_min
+  // endMin   → end_min
   @override
   List<String> get customConstraints => [
         'CHECK (start_min >= 0 AND start_min <= 1440)',
@@ -64,9 +51,7 @@ class Schedules extends Table {
       ];
 }
 
-/// ------------------------------
-/// Database 클래스
-/// ------------------------------
+// Database 클래스
 @DriftDatabase(tables: [Diaries, Schedules])
 class LocalDatabase extends _$LocalDatabase {
   LocalDatabase() : super(_openConnection());
@@ -74,9 +59,7 @@ class LocalDatabase extends _$LocalDatabase {
   @override
   int get schemaVersion => 1;
 
-  /// --------------------------
-  /// Diaries 기능
-  /// --------------------------
+  // Diaries 기능
 
   Future<Diary?> getDiary(DateTime date) {
     final n = DateTime.utc(date.year, date.month, date.day);

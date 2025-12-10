@@ -7,7 +7,7 @@ class StorageService {
 
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  /// 이미지 업로드 후 URL 반환
+  // 이미지 업로드 후 URL 반환
   Future<String> uploadDiaryImage(File file) async {
     final fileName =
         '${DateTime.now().millisecondsSinceEpoch}_${file.uri.pathSegments.last}';
@@ -19,7 +19,7 @@ class StorageService {
     return await snapshot.ref.getDownloadURL();
   }
 
-  /// 영상 업로드 후 URL 반환
+  // 영상 업로드 후 URL 반환
   Future<String> uploadDiaryVideo(File file) async {
     final fileName =
         '${DateTime.now().millisecondsSinceEpoch}_${file.uri.pathSegments.last}';
