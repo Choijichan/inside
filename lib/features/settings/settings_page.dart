@@ -52,7 +52,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  /// 🔹 구글 계정 섹션
+  // 구글 계정 섹션
   Widget _buildAccountSection(BuildContext context) {
     final User? user = AuthService.instance.currentUser;
 
@@ -141,7 +141,7 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           const SizedBox(height: 8),
 
-          // 🔹 계정 섹션
+          // 계정 섹션
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
@@ -154,7 +154,7 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 16),
           const Divider(),
 
-          // 🎨 테마 설정
+          // 테마 설정
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
@@ -188,7 +188,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const Divider(),
 
-          // 🔔 알림 설정
+          // 알림 설정
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
@@ -224,7 +224,7 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 8),
           const Divider(),
 
-          // 🔐 PIN 잠금 설정
+          // PIN 잠금 설정
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
@@ -255,7 +255,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 }
 
-/// PIN 설정/변경용 다이얼로그
+// PIN 설정/변경용 다이얼로그
 class _PinEditDialog extends StatefulWidget {
   final PinLockController pinLock;
 
