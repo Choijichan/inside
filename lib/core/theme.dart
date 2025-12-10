@@ -58,6 +58,6 @@ final lightTheme = ThemeData(
   ),
 );
 
-/// ✅ main.dart에서 쓰는 기본 테마
+///     main.dart에서 쓰는 기본 테마
 ///    `theme: appTheme` 이렇게 연결됨
 final ThemeData appTheme = lightTheme;
