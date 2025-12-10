@@ -1,10 +1,9 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-/// 하루에 한 번 일기 쓰라고 알려주는 알림 서비스
+// 하루에 한 번 일기 쓰라고 알려주는 알림 서비스
 class NotificationService {
   NotificationService._internal();
   static final NotificationService _instance = NotificationService._internal();
@@ -33,7 +32,7 @@ class NotificationService {
     await _plugin.initialize(settings);
   }
 
-  /// 매일 같은 시각에 알림 예약
+  // 매일 같은 시각에 알림 예약
   Future<void> scheduleDailyReminder({
     required int hour,
     required int minute,
@@ -80,7 +79,7 @@ class NotificationService {
     );
   }
 
-  /// 예약된 알림 취소
+  // 예약된 알림 취소
   Future<void> cancelDailyReminder() async {
     await _plugin.cancel(1001);
   }
