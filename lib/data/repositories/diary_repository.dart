@@ -1,6 +1,3 @@
-/// DiaryRepository
-///  - 날짜 정규화(UTC 자정) 유틸 포함
-///  - DB 접근을 화면/비즈니스 로직과 분리
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:drift/drift.dart';
 import '../drift/drift_database.dart';
@@ -11,14 +8,14 @@ class DiaryRepository {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// yyyy-mm-dd 기준으로 UTC 자정으로 고정
+  // yyyy-mm-dd 기준으로 UTC 자정으로 고정
   DateTime normalize(DateTime d) => DateTime.utc(d.year, d.month, d.day);
 
-  /// Firestore 컬렉션
+  // Firestore 컬렉션
   CollectionReference<Map<String, dynamic>> get _diariesCol =>
       _firestore.collection('diaries');
 
-  /// 날짜 → 문서 ID (예: 2025-11-25)
+  // 날짜 → 문서 ID (예: 2025-11-25)
   String _docIdFromDate(DateTime date) {
     final d = normalize(date);
     final y = d.year.toString().padLeft(4, '0');
@@ -27,7 +24,7 @@ class DiaryRepository {
     return '$y-$m-$dd';
   }
 
-  /// Diary → Map (Firestore 저장용)
+  // Diary → Map (Firestore 저장용)
   Map<String, dynamic> _diaryToMap(Diary diary) {
     return {
       'date': diary.date.toUtc(),
@@ -43,7 +40,7 @@ class DiaryRepository {
   Future<Diary?> get(DateTime date) => _db.getDiary(normalize(date));
   Stream<Diary?> watch(DateTime date) => _db.watchDiary(normalize(date));
 
-  /// 로컬 DB에 upsert 후 Firestore에 동기화
+  // 로컬 DB에 upsert 후 Firestore에 동기화
   Future<void> upsert({
     required DateTime date,
     required int emotion,
@@ -75,7 +72,7 @@ class DiaryRepository {
     }
   }
 
-  /// 로컬 + Firestore 둘 다 삭제
+  // 로컬 + Firestore 둘 다 삭제
   Future<void> delete(DateTime date) async {
     final normalized = normalize(date);
 
