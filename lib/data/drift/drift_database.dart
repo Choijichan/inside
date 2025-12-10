@@ -112,17 +112,15 @@ class LocalDatabase extends _$LocalDatabase {
     return (delete(diaries)..where((t) => t.date.equals(n))).go();
   }
 
-  /// --------------------------
-  /// Schedule 기능 (기존)
-  /// --------------------------
+  // Schedule 기능 (기존)
 
-  /// 특정 날짜 일정 스트림 (UI에서 watch용)
+  // 특정 날짜 일정 스트림 (UI에서 watch용)
   Stream<List<Schedule>> watchSchedules(DateTime date) {
     final n = DateTime.utc(date.year, date.month, date.day);
     return (select(schedules)..where((t) => t.date.equals(n))).watch();
   }
 
-  /// id 있으면 update, 없으면 insert 형태의 upsert
+  // id 있으면 update, 없으면 insert 형태의 upsert
   Future<void> upsertSchedule({
     required int? id,
     required DateTime date,
@@ -143,22 +141,20 @@ class LocalDatabase extends _$LocalDatabase {
     await into(schedules).insertOnConflictUpdate(comp);
   }
 
-  /// id로 일정 삭제
+  // id로 일정 삭제
   Future<int> deleteSchedule(int id) {
     return (delete(schedules)..where((t) => t.id.equals(id))).go();
   }
 
-  /// --------------------------
-  /// Schedule 기능 (Repository에서 사용하는 헬퍼들)
-  /// --------------------------
+  // Schedule 기능 (Repository에서 사용하는 헬퍼들)
 
-  /// 특정 날짜의 일정 리스트
+  // 특정 날짜의 일정 리스트
   Future<List<Schedule>> listSchedules(DateTime date) {
     final n = DateTime.utc(date.year, date.month, date.day);
     return (select(schedules)..where((t) => t.date.equals(n))).get();
   }
 
-  /// 날짜 구간으로 일정 스트림 조회 (예: 캘린더 월간 범위)
+  // 날짜 구간으로 일정 스트림 조회 (예: 캘린더 월간 범위)
   Stream<List<Schedule>> watchSchedulesInRange(DateTime start, DateTime end) {
     final s = DateTime.utc(start.year, start.month, start.day);
     final e = DateTime.utc(end.year, end.month, end.day);
@@ -172,12 +168,12 @@ class LocalDatabase extends _$LocalDatabase {
         .watch();
   }
 
-  /// 일정 추가 (Repository에서 SchedulesCompanion 만들어서 넘김)
+  // 일정 추가 (Repository에서 SchedulesCompanion 만들어서 넘김)
   Future<int> insertSchedule(SchedulesCompanion comp) {
     return into(schedules).insert(comp);
   }
 
-  /// 일정 수정 (id 기준으로 write)
+  // 일정 수정 (id 기준으로 write)
   Future<bool> updateSchedule(SchedulesCompanion comp) async {
     final idValue = comp.id.value;
     final affected = await (update(schedules)
@@ -187,9 +183,7 @@ class LocalDatabase extends _$LocalDatabase {
   }
 }
 
-/// --------------------------------------------
-/// SQLite 파일(app.sqlite) 생성 경로
-/// --------------------------------------------
+// SQLite 파일(app.sqlite) 생성 경로
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dir = await getApplicationDocumentsDirectory();
