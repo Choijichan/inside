@@ -5,7 +5,7 @@ import 'package:get_it/get_it.dart';
 import '../../data/drift/drift_database.dart';
 import '../../data/repositories/schedule_repository.dart';
 
-/// 캘린더 월 범위의 일정/일기 요약 + 선택일의 일정 목록 제공
+// 캘린더 월 범위의 일정/일기 요약 + 선택일의 일정 목록 제공
 class ScheduleProvider extends ChangeNotifier {
   final ScheduleRepository _repo = GetIt.I<ScheduleRepository>();
   final LocalDatabase _db = GetIt.I<LocalDatabase>();
@@ -35,7 +35,7 @@ class ScheduleProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 월 범위를 구독하여 일정 집계 + 일기 존재 여부 집계
+  // 월 범위를 구독하여 일정 집계 + 일기 존재 여부 집계
   void setMonthRange(DateTime start, DateTime end) {
     // 안전 처리: 1~말일까지로 정규화
     final s = _normalize(start);

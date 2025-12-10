@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:diary_calendar_app/features/schedule/time_utils.dart';
 import 'package:diary_calendar_app/features/schedule/schedule_provider.dart';
 
-/// 일정 추가/수정 다이얼로그
+// 일정 추가/수정 다이얼로그
 Future<void> openScheduleDialog(
   BuildContext context, {
   int? id,

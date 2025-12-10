@@ -1,4 +1,4 @@
-/// 분(minute) 단위를 HH:MM로 변환/파싱하는 유틸
+// 분(minute) 단위를 HH:MM로 변환/파싱하는 유틸
 String mmToHHmm(int mm) {
   final h = (mm ~/ 60).toString().padLeft(2, '0');
   final m = (mm % 60).toString().padLeft(2, '0');
