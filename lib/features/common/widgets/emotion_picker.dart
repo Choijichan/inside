@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// 감정 선택 위젯
-/// - value: 현재 선택된 감정 (1~5)
-/// - onSelected: 감정이 선택될 때 호출
 class EmotionPicker extends StatelessWidget {
   final int value;
   final ValueChanged<int> onSelected;
