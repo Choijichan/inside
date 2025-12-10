@@ -67,7 +67,7 @@ Future<void> openScheduleDialog(
                   ),
                   const SizedBox(height: 12),
 
-                  /// 제목
+                  // 제목
                   TextFormField(
                     controller: titleCtrl,
                     decoration: const InputDecoration(labelText: '제목'),
@@ -76,7 +76,7 @@ Future<void> openScheduleDialog(
                   ),
                   const SizedBox(height: 12),
 
-                  /// 시작/종료 시간
+                  // 시작/종료 시간
                   Row(
                     children: [
                       Expanded(
@@ -102,7 +102,7 @@ Future<void> openScheduleDialog(
                   ),
                   const SizedBox(height: 8),
 
-                  /// 메모
+                  // 메모
                   TextFormField(
                     controller: memoCtrl,
                     decoration: const InputDecoration(labelText: '메모(선택)'),

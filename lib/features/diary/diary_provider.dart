@@ -7,7 +7,6 @@ import 'package:path_provider/path_provider.dart';
 import '../../data/drift/drift_database.dart';
 import '../../data/repositories/diary_repository.dart';
 
-/// Step 3: 다이어리 CRUD + 이미지 첨부 지원
 class DiaryProvider extends ChangeNotifier {
   final DiaryRepository _repo = GetIt.I<DiaryRepository>();
 
@@ -54,7 +53,7 @@ class DiaryProvider extends ChangeNotifier {
     await _repo.delete(selectedDate);
   }
 
-  /// 갤러리에서 이미지 선택 → 앱 문서 폴더에 복사 → 경로 반환
+  // 갤러리에서 이미지 선택 → 앱 문서 폴더에 복사 → 경로 반환
   Future<String?> pickAndSaveImage() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 2048);
