@@ -156,11 +156,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
     });
   }
 
-  /// -------------------------------
-  /// 영상 선택 (갤러리)
-  /// (한 번에 여러 개 선택은 image_picker가 미지원이어서
-  /// 버튼 여러 번 눌러서 여러 개 추가하는 방식)
-  /// -------------------------------
+  // 영상 선택 (갤러리)
   Future<void> _pickVideo() async {
     if (_medias.length >= _maxMedias) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -185,25 +181,20 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
     });
   }
 
-  /// 특정 인덱스 첨부 제거
+  // 특정 인덱스 첨부 제거
   void _removeMediaAt(int index) {
     setState(() {
       _medias.removeAt(index);
     });
   }
 
-  /// 전체 첨부 제거
+  // 전체 첨부 제거
   void _clearAllMedias() {
     setState(() {
       _medias.clear();
     });
   }
 
-  /// -------------------------------
-  /// 로컬 파일이면 Storage 업로드 → URL 반환 (여러 개)
-  /// 업로드 실패 시에도 다이어리는 꼭 저장되도록
-  /// 로컬 경로(path)는 그대로 유지
-  /// -------------------------------
   Future<List<DiaryMedia>> _uploadAllMedias(
       List<DiaryMedia> medias) async {
     final storage = StorageService.instance;
