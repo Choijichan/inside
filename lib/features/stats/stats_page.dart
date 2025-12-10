@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import '../../data/drift/drift_database.dart';
 import 'emotion_bottle_chart.dart';
 
-/// 감정 인덱스(1~5) -> 색상 매핑
+// 감정 인덱스(1~5) -> 색상 매핑
 Color _emotionColor(int emotion) {
   switch (emotion) {
     case 1:
@@ -24,7 +24,7 @@ Color _emotionColor(int emotion) {
 }
 
 
-/// 감정 카운트 맵 -> 병 안에 들어갈 구슬 리스트로 변환 (전역 함수)
+// 감정 카운트 맵 -> 병 안에 들어갈 구슬 리스트로 변환 (전역 함수)
 List<EmotionBead> _buildBeadsFromCounts(Map<int, int> counts) {
   final beads = <EmotionBead>[];
   counts.forEach((emotion, count) {
@@ -36,9 +36,9 @@ List<EmotionBead> _buildBeadsFromCounts(Map<int, int> counts) {
   return beads;
 }
 
-/// 간단 통계
-/// - 이번 달 감정 분포 (바 형태)
-/// - 연속 기록일(최대/현재)
+// 간단 통계
+// - 이번 달 감정 분포 (바 형태)
+// - 연속 기록일(최대/현재)
 class StatsPage extends StatefulWidget {
   const StatsPage({super.key});
 
@@ -130,7 +130,7 @@ class _StatsPageState extends State<StatsPage> {
             ),
             const SizedBox(height: 8),
 
-            // 🧡 감정 병 차트
+            // 감정 병 차트
             Center(
               child: EmotionBottleChart(
                 beads: _buildBeadsFromCounts(counts),
