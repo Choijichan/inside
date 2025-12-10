@@ -9,7 +9,7 @@ import 'package:diary_calendar_app/core/storage_service.dart';
 import 'package:diary_calendar_app/features/common/widgets/emotion_picker.dart';
 import 'package:diary_calendar_app/features/diary/diary_provider.dart';
 
-/// 다이어리 첨부 미디어 (이미지 or 영상)
+// 다이어리 첨부 미디어 (이미지 or 영상)
 class DiaryMedia {
   final String path; // 로컬 파일 경로 또는 URL
   final bool isVideo;
@@ -46,7 +46,7 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
   final _content = TextEditingController();
   int _emotion = 3; // 기본값
 
-  /// 첨부된 이미지/영상 목록
+  // 첨부된 이미지/영상 목록
   List<DiaryMedia> _medias = [];
 
   final _picker = ImagePicker();
@@ -96,13 +96,12 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
         lower.contains('diary_videos'); // Storage 폴더 이름 기준으로도 체크
   }
 
-  /// DB의 imagePath(String?)를 List<DiaryMedia>로 변환
+  // DB의 imagePath(String?)를 List<DiaryMedia>로 변환
   List<DiaryMedia> _decodeMediasFromRaw(String? raw) {
     if (raw == null) return [];
     final trimmed = raw.trim();
     if (trimmed.isEmpty) return [];
 
-    // 새 버전: JSON 리스트
     if (trimmed.startsWith('[')) {
       try {
         final List list = jsonDecode(trimmed) as List;
@@ -116,23 +115,20 @@ class _DiaryEditorPageState extends State<DiaryEditorPage> {
       }
     }
 
-    // 옛 버전: 단일 문자열만 저장돼 있던 경우
     final isVideo = _isVideoPath(trimmed);
     return [
       DiaryMedia(path: trimmed, isVideo: isVideo),
     ];
   }
 
-  /// List<DiaryMedia> → JSON 문자열
+  // List<DiaryMedia> → JSON 문자열
   String? _encodeMediasToJson(List<DiaryMedia> medias) {
     if (medias.isEmpty) return null;
     final list = medias.map((m) => m.toJson()).toList();
     return jsonEncode(list);
   }
 
-  /// -------------------------------
-  /// 사진 여러 장 선택 (갤러리)
-  /// -------------------------------
+  // 사진 여러 장 선택 (갤러리)
   Future<void> _pickImages() async {
     if (_medias.length >= _maxMedias) {
       ScaffoldMessenger.of(context).showSnackBar(
